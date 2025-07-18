@@ -28,38 +28,76 @@ public class Controller {
         this.controller = controller;
     }
 
+    /***
+     * 
+     * @return The CommandXboxController being handled by this Controller object.
+     */
     public CommandXboxController getController() {
         return controller;
     }
 
+    /**
+     * 
+     * @return If the controller is connected to the Driver Station.
+     */
     public boolean isConnected() {
         return controller.isConnected();
     }
 
+    /*** Method to make the controller vibrate with a certain power and position.
+     * 
+     * @param type Rumble on either the left or right vibration motor, or both.
+     * @param power The power of the vibration.
+     */
     public void rumble(RumbleType type, double power) {
         controller.setRumble(type, power);
     }
 
+    /***
+     * Stops rumble on both vibration motors of the controller.
+     */
     public void cancelRumble() {
         controller.setRumble(RumbleType.kBothRumble, 0);
     }
 
+    /*** Command to make the controller vibrate with a certain power and position.
+     * 
+     * @param type Rumble on either the left or right vibration motor, or both.
+     * @param power The power of the vibration.
+     */
     public Command setRumble(RumbleType type, double power) {
         return Commands.runOnce(() -> rumble(type, power));
     }
 
+    /***
+     * Command to stop rumble on both vibration motors of the controller.
+     */
     public Command stopRumble() {
         return Commands.runOnce(() -> cancelRumble());
     }
 
+    /** Command to make the controller rumble on certain vibration motors for a set period of time, and then stops the vibration.
+     * 
+     * @param type Rumble on either the left or right vibration motor, or both.
+     * @param power Power of the vibration.
+     * @param time Time in seconds that the vibration lasts.
+     * @return Command to make controller rumble.
+     */
     public Command rumbleThenStop(RumbleType type, double power, double time) {
-        return setRumble(type, power).andThen(new WaitCommand(time)).andThen(stopRumble());
+        return setRumble(type, power).andThen(new WaitCommand(time)).andThen(stopRumble()).andThen(new WaitCommand(time));
     }
 
-    public Command blinkRumble(double time, RumbleType type, double power) { 
+    /** Command to make the controller rumble on certain vibration motors for a set period of time, and then stops the vibration. This sequence repeats twice after.
+     * 
+     * @param type Rumble on either the left or right vibration motor, or both.
+     * @param power Power of each vibration.
+     * @param time Time in seconds that each vibration lasts.
+     * @return Command to make controller rumble.
+     */
+    public Command blinkRumble(double time, RumbleType type, double power) {
         return rumbleThenStop(type, power, time)
-            .andThen(new WaitCommand(time)).andThen(rumbleThenStop(type, power, time))
-            .andThen(new WaitCommand(time)).andThen(rumbleThenStop(type, power, time));
+            .andThen(rumbleThenStop(type, power, time))
+            .andThen(rumbleThenStop(type, power, time));
     }
     
 }
