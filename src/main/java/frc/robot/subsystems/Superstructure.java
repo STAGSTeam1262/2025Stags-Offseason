@@ -106,12 +106,14 @@ public class Superstructure extends SubsystemBase {
     public RobotState robotState = RobotState.IDLE;
 
     public Drivetrain drivetrain;
+    public Effector effector;
+    public Elevator elevator;
 
     // NTPublishers
-    StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Superstructure/RobotMode").publish();
-    StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Superstructure/WantedState").publish();
-    StringPublisher robotStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Superstructure/RobotState").publish();
-    StringPublisher robotModeColorPublisher = NetworkTableInstance.getDefault().getStringTopic("Superstructure/RobotModeColor").publish();
+    StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
+    StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/WantedState").publish();
+    StringPublisher robotStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotState").publish();
+    StringPublisher robotModeColorPublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotModeColor").publish();
 
     // Triggers
     public Trigger isEnabled = new Trigger(() -> DriverStation.isEnabled());
@@ -129,14 +131,28 @@ public class Superstructure extends SubsystemBase {
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator) {
         this.drivetrain = drivetrain;
+        this.effector = effector;
+        this.elevator = elevator;
+
+        drivetrain.provideSubsystemAccessToSuperstructure(this);
+        effector.provideSubsystemAccessToSuperstructure(this);
+        elevator.provideSubsystemAccessToSuperstructure(this);
 
         setupTriggers();
     }
 
     public Drivetrain getDrivetrain() {
         return drivetrain;
+    }
+
+    public Effector getEffector() {
+        return effector;
+    }
+
+    public Elevator getElevator() {
+        return elevator;
     }
 
     public void setupTriggers() {
@@ -190,8 +206,7 @@ public class Superstructure extends SubsystemBase {
 
     /*** Acts as a fake disable, running stop method in all other subsystems. */
     public void stop() {
-        // arm.stop();
-        // elevator.stop();
+        effector.stop();
     }
 
     public Pose2d getRobotPose() {
