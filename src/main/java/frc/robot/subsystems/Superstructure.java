@@ -47,7 +47,8 @@ public class Superstructure extends SubsystemBase {
 
     public enum WantedState {
         IDLE("kIdle"),
-        GROUND_PICKUP("kGroundPickup"),
+        CORAL_GROUND_PICKUP("kCoralGroundPickup"),
+        ALGAE_GROUND_PICKUP("kAlgaeGroundPickup"),
         L1("kL1"),
         L2("kL2"),
         L3("kL3"),
@@ -108,6 +109,7 @@ public class Superstructure extends SubsystemBase {
     public Drivetrain drivetrain;
     public Effector effector;
     public Elevator elevator;
+    public Intake intake;
 
     // NTPublishers
     StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
@@ -124,21 +126,23 @@ public class Superstructure extends SubsystemBase {
     public Trigger isAutoEnabled = isEnabled.and(isAuto);
     public Trigger isEndgame = isTeleopEnabled.and(() -> DriverStation.getMatchTime() != -1 && DriverStation.getMatchTime() <= 20);
 
-    public Trigger isIdleState = new Trigger(() -> robotMode == RobotMode.IDLE);
-    public Trigger isCoralScoringState = new Trigger(() -> robotMode == RobotMode.CORAL);
-    public Trigger isAlgaeScoringState = new Trigger(() -> robotMode == RobotMode.ALGAE);
-    public Trigger isClimbState = new Trigger(() -> robotMode == RobotMode.CLIMB);
+    public Trigger isIdleMode = new Trigger(() -> robotMode == RobotMode.IDLE);
+    public Trigger isCoralScoringMode = new Trigger(() -> robotMode == RobotMode.CORAL);
+    public Trigger isAlgaeScoringMode = new Trigger(() -> robotMode == RobotMode.ALGAE);
+    public Trigger isClimbMode = new Trigger(() -> robotMode == RobotMode.CLIMB);
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Intake intake) {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
+        this.intake = intake;
 
         drivetrain.provideSubsystemAccessToSuperstructure(this);
         effector.provideSubsystemAccessToSuperstructure(this);
         elevator.provideSubsystemAccessToSuperstructure(this);
+        intake.provideSubsystemAccessToSuperstructure(this);
 
         setupTriggers();
     }
@@ -153,6 +157,10 @@ public class Superstructure extends SubsystemBase {
 
     public Elevator getElevator() {
         return elevator;
+    }
+
+    public Intake getIntake() {
+        return intake;
     }
 
     public void setupTriggers() {
@@ -207,6 +215,19 @@ public class Superstructure extends SubsystemBase {
     /*** Acts as a fake disable, running stop method in all other subsystems. */
     public void stop() {
         effector.stop();
+        elevator.stop();
+    }
+
+    public RobotMode getRobotMode() {
+        return robotMode;
+    }
+
+    public WantedState getWantedState() {
+        return wantedState;
+    }
+
+    public RobotState getRobotState() {
+        return robotState;
     }
 
     public Pose2d getRobotPose() {

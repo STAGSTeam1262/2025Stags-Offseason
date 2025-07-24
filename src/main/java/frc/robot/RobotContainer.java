@@ -22,6 +22,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Effector;
 import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 
 public class RobotContainer {
@@ -39,7 +40,8 @@ public class RobotContainer {
     public final Drivetrain drivetrain = TunerConstants.createDrivetrain();
     public final Effector effector = new Effector();
     public final Elevator elevator = new Elevator();
-    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator);
+    public final Intake intake = new Intake();
+    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, intake);
 
     public final CommandXboxController driverController = Constants.OperatorConstants.driverController.getController();
     public final CommandXboxController operatorController = Constants.OperatorConstants.operatorController.getController();
