@@ -25,6 +25,7 @@ import frc.robot.subsystems.Effector;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.Vision;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -39,10 +40,11 @@ public class RobotContainer {
 
     // Subsystems
     public final Drivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final Vision vision = new Vision(drivetrain);
     public final Effector effector = new Effector();
     public final Elevator elevator = new Elevator();
     public final Intake intake = new Intake();
-    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, intake);
+    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, intake, vision);
 
     public final CommandXboxController driverController = Constants.OperatorConstants.driverController.getController();
     public final CommandXboxController operatorController = Constants.OperatorConstants.operatorController.getController();

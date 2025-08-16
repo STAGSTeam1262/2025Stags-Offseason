@@ -69,7 +69,7 @@ public class Intake extends SubsystemBase {
     @Override
     public void periodic() {
         handleStateTransition();
-
+        
         statePublisher.set(intakeState.getDisplayName());
     }
 

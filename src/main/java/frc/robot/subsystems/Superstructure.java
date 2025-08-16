@@ -133,7 +133,7 @@ public class Superstructure extends SubsystemBase {
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Intake intake) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Intake intake, Vision vision) {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
@@ -143,6 +143,7 @@ public class Superstructure extends SubsystemBase {
         effector.provideSubsystemAccessToSuperstructure(this);
         elevator.provideSubsystemAccessToSuperstructure(this);
         intake.provideSubsystemAccessToSuperstructure(this);
+        vision.provideSubsystemAccessToSuperstructure(this);
 
         setupTriggers();
     }
