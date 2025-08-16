@@ -10,23 +10,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
 
-    public enum WantedState {
-        IDLE("kIdle"),
-        LOWERED("kLowered"),
-        STOWED("kStowed"),
-        INTAKING("kIntaking");
-
-        String displayName;
-
-        WantedState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
     public enum IntakeState {
         IDLE("kIdle"),
         LOWERED("kLowered"),
@@ -49,10 +32,8 @@ public class Intake extends SubsystemBase {
 
     Superstructure superstructure;
 
-    public WantedState wantedState = WantedState.IDLE;
     public IntakeState intakeState = IntakeState.IDLE;
 
-    StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Intake/Wanted State").publish();
     StringPublisher statePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Intake/State").publish();
 
     public double setpoint = 0;
@@ -73,12 +54,12 @@ public class Intake extends SubsystemBase {
 
     }
 
-    public void setWantedState(WantedState state) {
-        this.wantedState = state;
+    public void setState(IntakeState state) {
+        this.intakeState = state;
     }
 
-    public Command setState(WantedState state) {
-        return Commands.runOnce(() -> setWantedState(state));
+    public Command setIntakeState(IntakeState state) {
+        return Commands.runOnce(() -> setState(state));
     }
 
     public void provideSubsystemAccessToSuperstructure(Superstructure superstructure) {
@@ -89,7 +70,6 @@ public class Intake extends SubsystemBase {
     public void periodic() {
         handleStateTransition();
 
-        wantedStatePublisher.set(wantedState.getDisplayName());
         statePublisher.set(intakeState.getDisplayName());
     }
 

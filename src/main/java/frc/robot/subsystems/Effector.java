@@ -9,20 +9,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Effector extends SubsystemBase {
 
-    public enum WantedState {
-        IDLE("kIdle");
-
-        String displayName;
-
-        WantedState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
     public enum PivotState {
         IDLE("kIdle");
 
@@ -53,8 +39,6 @@ public class Effector extends SubsystemBase {
 
     Superstructure superstructure;
 
-    public WantedState wantedState = WantedState.IDLE;
-    StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/WantedState").publish();
     public PivotState pivotState = PivotState.IDLE;
     StringPublisher pivotStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/PivotState").publish();
     public WheelState wheelState = WheelState.IDLE;
@@ -74,24 +58,20 @@ public class Effector extends SubsystemBase {
         
     }
 
-    public void setWantedState(WantedState state) {
-        this.wantedState = state;
+    public void setState(PivotState state) {
+        this.pivotState = state;
     }
 
-    public Command setPivotState(WantedState state) {
-        return Commands.runOnce(() -> setWantedState(state));
+    public Command setPivotState(PivotState state) {
+        return Commands.runOnce(() -> setState(state));
     }
 
-    public void setState(WheelState state) {
+    public void setRollerState(WheelState state) {
         this.wheelState = state;
     }
 
     public Command setWheelState(WheelState state) {
-        return Commands.runOnce(() -> setState(state));
-    }
-
-    public WantedState getWantedState() {
-        return wantedState;
+        return Commands.runOnce(() -> setRollerState(state));
     }
 
     public PivotState getPivotState() {
@@ -116,7 +96,6 @@ public class Effector extends SubsystemBase {
 
     @Override
     public void periodic() {
-        wantedStatePublisher.set(wantedState.getDisplayName());
         pivotStatePublisher.set(pivotState.getDisplayName());
         wheelStatePublisher.set(wheelState.getDisplayName());
 

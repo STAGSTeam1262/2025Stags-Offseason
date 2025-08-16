@@ -9,26 +9,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Elevator extends SubsystemBase {
 
-    public enum WantedState {
-        IDLE("kIdle"),
-        STOWED("kStow"),
-        CORAL_INTAKE("kIntake"),
-        L1("kL1"),
-        L2("kL2"),
-        L3("kL3"),
-        L4("kL4");
-
-        String displayName;
-
-        WantedState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
     public enum State {
         IDLE("kIdle"),
         STOWED("kStow"),
@@ -55,9 +35,6 @@ public class Elevator extends SubsystemBase {
     }
 
     Superstructure superstructure;
-
-    public WantedState wantedState = WantedState.IDLE;
-    StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Elevator/WantedState").publish();
     public State state = State.IDLE;
     StringPublisher statePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Elevator/State").publish();
 
@@ -74,12 +51,12 @@ public class Elevator extends SubsystemBase {
         
     }
 
-    public void setWantedState(WantedState state) {
-        this.wantedState = state;
+    public void setState(State state) {
+        this.state = state;
     }
 
-    public Command setState(WantedState state) {
-        return Commands.runOnce(() -> setWantedState(state));
+    public Command setElevatorState(State state) {
+        return Commands.runOnce(() -> setState(state));
     }
 
     public void handleStateTransition() {
@@ -92,7 +69,6 @@ public class Elevator extends SubsystemBase {
 
     @Override
     public void periodic() {
-        wantedStatePublisher.set(wantedState.getDisplayName());
         statePublisher.set(state.getDisplayName());
 
         setpointPublisher.set(setpoint);

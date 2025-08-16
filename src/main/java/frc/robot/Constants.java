@@ -16,7 +16,7 @@ public final class Constants {
 
     public static class AutopilotConstants {
         public static final APConstraints apConstraints = new APConstraints(6, 10, 5);
-        public static final APProfile apProfile = new APProfile().withConstraints(apConstraints);
+        public static final APProfile apProfile = new APProfile(apConstraints);
         public static final Autopilot autopilot = new Autopilot(apProfile);
     }
 }

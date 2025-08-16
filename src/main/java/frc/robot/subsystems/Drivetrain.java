@@ -43,7 +43,7 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     public Superstructure superstructure;
 
-    public APTarget target = new APTarget();
+    public APTarget target = new APTarget(new Pose2d());
 
     public Trigger isAtAlignmentTarget = new Trigger(
         () -> Constants.AutopilotConstants.autopilot.atTarget(getState().Pose, target));
