@@ -24,7 +24,9 @@ public class Effector extends SubsystemBase {
     }
 
     public enum WheelState {
-        IDLE("kIdle");
+        IDLE("kIdle"),
+        ALGAE_INTAKE("kAlgaeIntake"),
+        EJECT("kEject");
 
         String displayName;
 

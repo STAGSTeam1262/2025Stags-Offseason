@@ -63,7 +63,7 @@ public class Vision extends SubsystemBase {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
+                drivetrain.addVisionMeasurement(new Pose2d(tagCam1VisionEst.get().estimatedPose.toPose2d().getTranslation(), drivetrain.getState().Pose.getRotation()), tagCam1VisionEst.get().timestampSeconds);
                 tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
             }
         }   
@@ -72,7 +72,7 @@ public class Vision extends SubsystemBase {
             var tag2Change = tagCamera2.getLatestResult();
             tagCam2VisionEst = tag2PhotonPoseEstimator.update(tag2Change);
             if (tagCam2VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam2VisionEst.get().estimatedPose.toPose2d(), tagCam2VisionEst.get().timestampSeconds);
+                drivetrain.addVisionMeasurement(new Pose2d(tagCam2VisionEst.get().estimatedPose.toPose2d().getTranslation(), drivetrain.getState().Pose.getRotation()), tagCam2VisionEst.get().timestampSeconds);
                 tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
             }
         }  

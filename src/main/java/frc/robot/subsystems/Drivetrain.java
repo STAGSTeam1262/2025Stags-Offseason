@@ -2,25 +2,33 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
+import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.therekrab.autopilot.APTarget;
+import com.therekrab.autopilot.Autopilot.APResult;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -45,6 +53,11 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     public APTarget target = new APTarget(new Pose2d());
 
+    StructPublisher<Pose2d> targetPosePublisher = NetworkTableInstance.getDefault().getStructTopic("Subsystems/Drivebase/Wanted Position", Pose2d.struct).publish();
+
+    List<Pose2d> leftPoses = addLeftPoses();
+    List<Pose2d> rightPoses = addRightPoses();
+
     public Trigger isAtAlignmentTarget = new Trigger(
         () -> Constants.AutopilotConstants.autopilot.atTarget(getState().Pose, target));
     
@@ -57,6 +70,8 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
     /** Swerve request to apply during robot-centric path following */
     private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = new SwerveRequest.ApplyRobotSpeeds();
+    
+    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
@@ -146,6 +161,10 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
         configureAutoBuilder();
     }
 
+    public void stop() {
+        this.setControl(brake);
+    }
+
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
@@ -233,6 +252,28 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
         }
     }
 
+    public void setTarget(APTarget target) {
+        this.target = target;
+    }
+
+    public APTarget getLeftReefBranch() {
+        Pose2d drivePose = getState().Pose;
+        Pose2d nearestBranch = drivePose.nearest(leftPoses);
+
+        targetPosePublisher.set(nearestBranch);
+        
+        return new APTarget(nearestBranch).withEntryAngle(nearestBranch.getRotation());
+    }
+
+    public APTarget getRightReefBranch() {
+        Pose2d drivePose = getState().Pose;
+        Pose2d nearestBranch = drivePose.nearest(rightPoses);
+
+        targetPosePublisher.set(nearestBranch);
+
+        return new APTarget(nearestBranch).withEntryAngle(nearestBranch.getRotation());
+    }
+
     /**
      * Returns a command that applies the specified control request to this swerve drivetrain.
      *
@@ -306,6 +347,29 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
         m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
 
+    private SwerveRequest.FieldCentricFacingAngle m_request = new SwerveRequest.FieldCentricFacingAngle()
+            .withForwardPerspective(ForwardPerspectiveValue.BlueAlliance)
+            .withDriveRequestType(DriveRequestType.Velocity)
+            .withHeadingPID(4, 0, 0); /* change these values for your robot */
+
+    public Command alignCommand = run(() -> {
+        ChassisSpeeds robotRelativeSpeeds = getState().Speeds;
+        Pose2d pose = getState().Pose;
+
+        APResult output = Constants.AutopilotConstants.autopilot.calculate(pose, robotRelativeSpeeds, target);
+
+        /* these speeds are field relative */
+        LinearVelocity veloX = output.vx();
+        LinearVelocity veloY = output.vy();
+        Rotation2d headingReference = output.targetAngle();
+
+        this.setControl(m_request
+            .withVelocityX(veloX)
+            .withVelocityY(veloY)
+            .withTargetDirection(headingReference));
+    }).until(() -> Constants.AutopilotConstants.autopilot.atTarget(getState().Pose, target))
+      .finallyDo(this::stop);
+
     /**
      * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
      * while still accounting for measurement noise.
@@ -338,5 +402,44 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
         Matrix<N3, N1> visionMeasurementStdDevs
     ) {
         super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
+    }
+
+        public List<Pose2d> addLeftPoses() {
+        List<Pose2d> poses = new ArrayList<Pose2d>();
+
+        poses.add(new Pose2d(3.185, 4.182, Rotation2d.fromDegrees(0)));
+        poses.add(new Pose2d(3.695, 2.982, Rotation2d.fromDegrees(60)));
+        poses.add(new Pose2d(5.003, 2.795, Rotation2d.fromDegrees(120)));
+        poses.add(new Pose2d(5.795, 3.861, Rotation2d.fromDegrees(180)));
+        poses.add(new Pose2d(5.290, 5.077, Rotation2d.fromDegrees(-120)));
+        poses.add(new Pose2d(3.977, 5.241, Rotation2d.fromDegrees(-60)));
+        poses.add(new Pose2d(11.755, 4.189, Rotation2d.fromDegrees(0)));
+        poses.add(new Pose2d(12.260, 2.959, Rotation2d.fromDegrees(60)));
+        poses.add(new Pose2d(13.573, 2.809, Rotation2d.fromDegrees(120)));
+        poses.add(new Pose2d(14.379, 3.847, Rotation2d.fromDegrees(180)));
+        poses.add(new Pose2d(13.860, 5.077, Rotation2d.fromDegrees(-120)));
+        poses.add(new Pose2d(12.561, 5.241, Rotation2d.fromDegrees(-60)));
+
+        return poses;
+        
+    }
+
+    public List<Pose2d> addRightPoses() {
+        List<Pose2d> poses = new ArrayList<Pose2d>();
+
+        poses.add(new Pose2d(3.185, 3.847, Rotation2d.fromDegrees(0)));
+        poses.add(new Pose2d(3.977, 2.809, Rotation2d.fromDegrees(60)));
+        poses.add(new Pose2d(5.303, 2.973, Rotation2d.fromDegrees(120)));
+        poses.add(new Pose2d(5.795, 4.182, Rotation2d.fromDegrees(180)));
+        poses.add(new Pose2d(5.003, 5.255, Rotation2d.fromDegrees(-120)));
+        poses.add(new Pose2d(3.677, 5.064, Rotation2d.fromDegrees(-60)));
+        poses.add(new Pose2d(11.755, 3.847, Rotation2d.fromDegrees(0)));
+        poses.add(new Pose2d(12.561, 2.809, Rotation2d.fromDegrees(60)));
+        poses.add(new Pose2d(13.860, 2.986, Rotation2d.fromDegrees(120)));
+        poses.add(new Pose2d(14.365, 4.203, Rotation2d.fromDegrees(180)));
+        poses.add(new Pose2d(13.572, 5.244, Rotation2d.fromDegrees(-120)));
+        poses.add(new Pose2d(12.247, 5.064, Rotation2d.fromDegrees(-60)));
+
+        return poses;
     }
 }

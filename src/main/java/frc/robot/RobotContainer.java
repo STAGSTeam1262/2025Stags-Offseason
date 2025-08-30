@@ -16,6 +16,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
@@ -26,6 +27,8 @@ import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Vision;
+import frc.robot.subsystems.Effector.WheelState;
+import frc.robot.subsystems.Superstructure.WantedState;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -82,8 +85,27 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
+        driverController.leftTrigger().onTrue(superstructure.setState(WantedState.CORAL_GROUND_PICKUP)).onFalse(superstructure.setState(WantedState.IDLE));
+        // Right Trigger Will Automatically Track Coral
+
+        driverController.leftBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getLeftReefBranch())));
+        driverController.leftBumper().whileTrue(drivetrain.alignCommand);
+        driverController.rightBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getRightReefBranch())));
+        driverController.rightBumper().whileTrue(drivetrain.alignCommand);
+
         // reset the field-centric heading on left bumper press
         driverController.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        // y will be whatever climb system we have
+
+        operatorController.a().onTrue(effector.setWheelState(WheelState.ALGAE_INTAKE)).onFalse(effector.setWheelState(WheelState.IDLE));
+        operatorController.b().onTrue(effector.setWheelState(WheelState.EJECT)).onFalse(effector.setWheelState(WheelState.IDLE));
+        operatorController.x().onTrue(superstructure.setState(WantedState.IDLE));
+        operatorController.y().onTrue(Commands.runOnce(() -> superstructure.toggleMode()));
+
+        operatorController.povUp().onTrue(superstructure.setState(WantedState.L3));
+        operatorController.povDown().onTrue(superstructure.setState(WantedState.L1));
+        operatorController.povLeft().onTrue(superstructure.setState(WantedState.L2));
+        operatorController.povRight().onTrue(superstructure.setState(WantedState.L4));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import frc.robot.subsystems.Elevator.State;
 import frc.robot.utils.Elastic;
 import frc.robot.utils.Elastic.Notification;
 import frc.robot.utils.Elastic.NotificationLevel;
@@ -173,7 +174,40 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void handleStateTransition() {
-        
+        if (getRobotMode() == RobotMode.ALGAE) {
+            if (wantedState == WantedState.L1) {
+                robotState = RobotState.ALGAE_PROCESSOR_SCORE;
+            } else if (wantedState == WantedState.L4) {
+                robotState = RobotState.ALGAE_BARGE_SCORE;
+            } else if (wantedState == WantedState.IDLE) {
+                robotState = RobotState.IDLE;
+            }
+        } else if (getRobotMode() == RobotMode.CORAL) {
+            if (wantedState == WantedState.L1) {
+                robotState = RobotState.CORAL_L1_SCORE;
+            } else if (wantedState == WantedState.L2) {
+                robotState = RobotState.CORAL_L2_SCORE;
+            } else if (wantedState == WantedState.L3) {
+                robotState = RobotState.CORAL_L3_SCORE;
+            } else if (wantedState == WantedState.L4) {
+                robotState = RobotState.CORAL_L4_SCORE;
+            } else if (wantedState == WantedState.IDLE) {
+                robotState = RobotState.IDLE;
+            }
+        } else if (getRobotMode() == RobotMode.IDLE) {
+            if (wantedState == WantedState.ALGAE_GROUND_PICKUP || wantedState == WantedState.L1) {
+                robotState = RobotState.ALGAE_GROUND_PICKUP;
+            } else if (wantedState == WantedState.CORAL_GROUND_PICKUP) {
+                robotState = RobotState.CORAL_GROUND_PICKUP;
+            } else if (wantedState == WantedState.L2) {
+                robotState = RobotState.ALGAE_LOW_PICKUP;
+            } else if (wantedState == WantedState.L3) {
+                robotState = RobotState.ALGAE_HIGH_PICKUP;
+            } else if (wantedState == WantedState.IDLE) {
+                robotState = RobotState.IDLE;
+            }
+        }
+        applyState();
     }
 
     /*** Sets the overall scoring mode of the robot.
@@ -195,9 +229,9 @@ public class Superstructure extends SubsystemBase {
         if (robotMode == RobotMode.ALGAE) {
             setRobotMode(RobotMode.CORAL);
         } else if (robotMode == RobotMode.CORAL) {
+            setRobotMode(RobotMode.IDLE);
+        } else if (robotMode == RobotMode.IDLE) {
             setRobotMode(RobotMode.ALGAE);
-        } else if (robotMode == RobotMode.CLIMB || robotMode == RobotMode.IDLE) {
-            setRobotMode(RobotMode.CORAL);
         }
     }
 
@@ -237,6 +271,32 @@ public class Superstructure extends SubsystemBase {
 
     public APTarget getAlignmentTarget() {
         return drivetrain.target;
+    }
+
+    public void applyState() {
+        if (robotState == RobotState.ALGAE_BARGE_SCORE) {
+            elevator.setState(State.NET);
+        } else if (robotState == RobotState.ALGAE_GROUND_PICKUP) {
+            elevator.setState(State.GROUND_ALGAE_INTAKE);
+        } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
+            elevator.setState(State.HIGH_ALGAE_INTAKE);
+        } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
+            elevator.setState(State.LOW_ALGAE_INTAKE);
+        } else if (robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
+            elevator.setState(State.PROCESSOR);
+        } else if (robotState == RobotState.CORAL_GROUND_PICKUP) {
+            elevator.setState(State.CORAL_INTAKE);
+        } else if (robotState == RobotState.CORAL_L1_SCORE) {
+            elevator.setState(State.L1);
+        } else if (robotState == RobotState.CORAL_L2_SCORE) {
+            elevator.setState(State.L2);
+        } else if (robotState == RobotState.CORAL_L3_SCORE) {
+            elevator.setState(State.L3);
+        } else if (robotState == RobotState.CORAL_L4_SCORE) {
+            elevator.setState(State.L4);
+        } else if (robotState == RobotState.IDLE) {
+            elevator.setState(State.STOWED);
+        }
     }
 
     public void notifyInfo(String title, String desc, double secondsDisplayed) {

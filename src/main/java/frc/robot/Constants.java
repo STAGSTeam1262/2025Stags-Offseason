@@ -1,9 +1,11 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Centimeters;
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.therekrab.autopilot.APConstraints;
 import com.therekrab.autopilot.APProfile;
 import com.therekrab.autopilot.Autopilot;
-
 import frc.robot.utils.Controller;
 
 public final class Constants {
@@ -15,8 +17,11 @@ public final class Constants {
     }
 
     public static class AutopilotConstants {
-        public static final APConstraints apConstraints = new APConstraints(6, 10, 5);
-        public static final APProfile apProfile = new APProfile(apConstraints);
+        public static final APConstraints apConstraints = new APConstraints(2, 10, 5);
+        public static final APProfile apProfile = new APProfile(apConstraints)
+            .withErrorXY(Centimeters.of(2))
+            .withErrorTheta(Degrees.of(0.5))
+            .withBeelineRadius(Centimeters.of(8));
         public static final Autopilot autopilot = new Autopilot(apProfile);
     }
 }
