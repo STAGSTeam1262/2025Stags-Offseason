@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 
 import edu.wpi.first.math.MathUtil;
@@ -17,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
@@ -24,7 +26,6 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Effector;
 import frc.robot.subsystems.Elevator;
-import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.Effector.WheelState;
@@ -46,8 +47,7 @@ public class RobotContainer {
     public final Vision vision = new Vision(drivetrain);
     public final Effector effector = new Effector();
     public final Elevator elevator = new Elevator();
-    public final Intake intake = new Intake();
-    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, intake, vision);
+    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, vision);
 
     public final CommandXboxController driverController = Constants.OperatorConstants.driverController.getController();
     public final CommandXboxController operatorController = Constants.OperatorConstants.operatorController.getController();
@@ -64,6 +64,21 @@ public class RobotContainer {
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
+        NamedCommands.registerCommand("L1", superstructure.setState(WantedState.AUTO_CORAL_L1));
+        NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2));
+        NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3));
+        NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
+        NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING));
+        NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING));
+        NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP));
+        NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP));
+        NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
+        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.CORAL_PICKUP).andThen(effector.setWheelState(WheelState.CORAL_INTAKE)));
+        NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
+        NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
+        NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
+        NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE));
+        
     }
 
     private void configureBindings() {
@@ -85,7 +100,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        driverController.leftTrigger().onTrue(superstructure.setState(WantedState.CORAL_GROUND_PICKUP)).onFalse(superstructure.setState(WantedState.IDLE));
+        driverController.leftTrigger().onTrue(superstructure.setState(WantedState.CORAL_PICKUP)).onFalse(superstructure.setState(WantedState.IDLE));
         // Right Trigger Will Automatically Track Coral
 
         driverController.leftBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getLeftReefBranch())));

@@ -6,6 +6,7 @@ import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class Elevator extends SubsystemBase {
 
@@ -41,10 +42,13 @@ public class Elevator extends SubsystemBase {
     public double setpoint = 0;
     DoublePublisher setpointPublisher = NetworkTableInstance.getDefault().getDoubleTopic("Subsystems/Elevator/Setpoint").publish();
 
+    public double motorPosition = 0;
+    public Trigger isAtSetpoint = new Trigger(() -> motorPosition <= setpoint + 2 && motorPosition >= setpoint - 2);
+
     
     /*** The end effector of the robot. */
     public Elevator() {
-
+        
     }
 
     public void stop() {

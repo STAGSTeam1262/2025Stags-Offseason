@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import frc.robot.subsystems.Effector.WheelState;
 import frc.robot.subsystems.Elevator.State;
 import frc.robot.utils.Elastic;
 import frc.robot.utils.Elastic.Notification;
@@ -48,13 +49,22 @@ public class Superstructure extends SubsystemBase {
 
     public enum WantedState {
         IDLE("kIdle"),
-        CORAL_GROUND_PICKUP("kCoralGroundPickup"),
+        CORAL_PICKUP("kCoralPickup"),
         ALGAE_GROUND_PICKUP("kAlgaeGroundPickup"),
         L1("kL1"),
         L2("kL2"),
         L3("kL3"),
         L4("kL4"),
-        CLIMB("kClimb");
+        CLIMB("kClimb"),
+        AUTO_CORAL_L1("kAutoL1"),
+        AUTO_CORAL_L2("kAutoL2"),
+        AUTO_CORAL_L3("kAutoL3"),
+        AUTO_CORAL_L4("kAutoL3"),
+        AUTO_CORAL_PICKUP("kAutoCoralPickup"),
+        AUTO_ALGAE_LOW_PICKUP("kAutoAlgaeLowPickup"),
+        AUTO_ALGAE_HIGH_PICKUP("kAutoAlgaeHighPickup"),
+        AUTO_ALGAE_PROCESSOR_SCORING("kAutoAlgaeProcessorScore"),
+        AUTO_ALGAE_NET_SCORING("kAutoAlgaeNetScore");
 
         String displayName;
 
@@ -75,7 +85,7 @@ public class Superstructure extends SubsystemBase {
         ALGAE_MARK_PICKUP("kAlgaeMarkPickup"),
         ALGAE_PROCESSOR_SCORE("kProcessorScore"),
         ALGAE_BARGE_SCORE("kBargeScore"),
-        CORAL_GROUND_PICKUP("kCoralGroundPickup"),
+        CORAL_PICKUP("kCoralPickup"),
         CORAL_L1_SCORE("kL1Scoring"),
         CORAL_L2_SCORE("kL2Scoring"),
         CORAL_L3_SCORE("kL3Scoring"),
@@ -110,7 +120,6 @@ public class Superstructure extends SubsystemBase {
     public Drivetrain drivetrain;
     public Effector effector;
     public Elevator elevator;
-    public Intake intake;
 
     // NTPublishers
     StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
@@ -134,16 +143,14 @@ public class Superstructure extends SubsystemBase {
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Intake intake, Vision vision) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Vision vision) {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
-        this.intake = intake;
 
         drivetrain.provideSubsystemAccessToSuperstructure(this);
         effector.provideSubsystemAccessToSuperstructure(this);
         elevator.provideSubsystemAccessToSuperstructure(this);
-        intake.provideSubsystemAccessToSuperstructure(this);
         vision.provideSubsystemAccessToSuperstructure(this);
 
         setupTriggers();
@@ -161,10 +168,6 @@ public class Superstructure extends SubsystemBase {
         return elevator;
     }
 
-    public Intake getIntake() {
-        return intake;
-    }
-
     public void setupTriggers() {
         isDisabled.onTrue(setState(WantedState.IDLE));
         
@@ -174,7 +177,29 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void handleStateTransition() {
-        if (getRobotMode() == RobotMode.ALGAE) {
+        if (isAutoEnabled.getAsBoolean()) {
+            if (wantedState == WantedState.AUTO_ALGAE_HIGH_PICKUP) {
+                robotState = RobotState.ALGAE_HIGH_PICKUP;
+            } else if (wantedState == WantedState.AUTO_ALGAE_LOW_PICKUP) {
+                robotState = RobotState.ALGAE_LOW_PICKUP;
+            } else if (wantedState == WantedState.AUTO_ALGAE_NET_SCORING) {
+                robotState = RobotState.ALGAE_BARGE_SCORE;
+            } else if (wantedState == WantedState.AUTO_ALGAE_PROCESSOR_SCORING) {
+                robotState = RobotState.ALGAE_PROCESSOR_SCORE;
+            } else if (wantedState == WantedState.AUTO_CORAL_L1) {
+                robotState = RobotState.CORAL_L1_SCORE;
+            } else if (wantedState == WantedState.AUTO_CORAL_L2) {
+                robotState = RobotState.CORAL_L2_SCORE;
+            } else if (wantedState == WantedState.AUTO_CORAL_L3) {
+                robotState = RobotState.CORAL_L3_SCORE;
+            } else if (wantedState == WantedState.AUTO_CORAL_L4) {
+                robotState = RobotState.CORAL_L4_SCORE;
+            } else if (wantedState == WantedState.AUTO_CORAL_PICKUP) {
+                robotState = RobotState.CORAL_PICKUP;
+            } else if (wantedState == WantedState.IDLE) {
+                robotState = RobotState.IDLE;
+            }
+        } else if (getRobotMode() == RobotMode.ALGAE) {
             if (wantedState == WantedState.L1) {
                 robotState = RobotState.ALGAE_PROCESSOR_SCORE;
             } else if (wantedState == WantedState.L4) {
@@ -197,8 +222,8 @@ public class Superstructure extends SubsystemBase {
         } else if (getRobotMode() == RobotMode.IDLE) {
             if (wantedState == WantedState.ALGAE_GROUND_PICKUP || wantedState == WantedState.L1) {
                 robotState = RobotState.ALGAE_GROUND_PICKUP;
-            } else if (wantedState == WantedState.CORAL_GROUND_PICKUP) {
-                robotState = RobotState.CORAL_GROUND_PICKUP;
+            } else if (wantedState == WantedState.CORAL_PICKUP) {
+                robotState = RobotState.CORAL_PICKUP;
             } else if (wantedState == WantedState.L2) {
                 robotState = RobotState.ALGAE_LOW_PICKUP;
             } else if (wantedState == WantedState.L3) {
@@ -216,6 +241,7 @@ public class Superstructure extends SubsystemBase {
      */
     public void setWantedState(WantedState state) {
         this.wantedState = state;
+        handleStateTransition();
     }
 
     /*** Sets the mode of the robot.
@@ -276,16 +302,6 @@ public class Superstructure extends SubsystemBase {
     public void applyState() {
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
-        } else if (robotState == RobotState.ALGAE_GROUND_PICKUP) {
-            elevator.setState(State.GROUND_ALGAE_INTAKE);
-        } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
-            elevator.setState(State.HIGH_ALGAE_INTAKE);
-        } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
-            elevator.setState(State.LOW_ALGAE_INTAKE);
-        } else if (robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
-            elevator.setState(State.PROCESSOR);
-        } else if (robotState == RobotState.CORAL_GROUND_PICKUP) {
-            elevator.setState(State.CORAL_INTAKE);
         } else if (robotState == RobotState.CORAL_L1_SCORE) {
             elevator.setState(State.L1);
         } else if (robotState == RobotState.CORAL_L2_SCORE) {
@@ -294,7 +310,9 @@ public class Superstructure extends SubsystemBase {
             elevator.setState(State.L3);
         } else if (robotState == RobotState.CORAL_L4_SCORE) {
             elevator.setState(State.L4);
-        } else if (robotState == RobotState.IDLE) {
+        } else if (robotState == RobotState.CORAL_PICKUP) {
+            elevator.setState(State.STOWED);
+        }  else if (robotState == RobotState.IDLE) {
             elevator.setState(State.STOWED);
         }
     }
@@ -316,7 +334,6 @@ public class Superstructure extends SubsystemBase {
 
     @Override
     public void periodic() {
-        handleStateTransition();
 
         robotModePublisher.set(robotMode.getDisplayName());
         wantedStatePublisher.set(wantedState.getDisplayName());

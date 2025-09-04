@@ -370,6 +370,8 @@ public class Drivetrain extends TunerSwerveDrivetrain implements Subsystem {
     }).until(() -> Constants.AutopilotConstants.autopilot.atTarget(getState().Pose, target))
       .finallyDo(this::stop);
 
+    // https://prod.liveshare.vsengsaas.visualstudio.com/join?3A7458F12BB162F6D7BD766E0E7EE567DE7A
+
     /**
      * Adds a vision measurement to the Kalman Filter. This will correct the odometry pose estimate
      * while still accounting for measurement noise.
