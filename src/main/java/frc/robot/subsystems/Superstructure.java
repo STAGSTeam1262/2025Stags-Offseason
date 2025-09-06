@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import frc.robot.subsystems.Effector.PivotState;
 import frc.robot.subsystems.Effector.WheelState;
 import frc.robot.subsystems.Elevator.State;
 import frc.robot.utils.Elastic;
@@ -48,60 +49,39 @@ public class Superstructure extends SubsystemBase {
     };
 
     public enum WantedState {
-        IDLE("kIdle"),
-        CORAL_PICKUP("kCoralPickup"),
-        ALGAE_GROUND_PICKUP("kAlgaeGroundPickup"),
-        L1("kL1"),
-        L2("kL2"),
-        L3("kL3"),
-        L4("kL4"),
-        CLIMB("kClimb"),
-        AUTO_CORAL_L1("kAutoL1"),
-        AUTO_CORAL_L2("kAutoL2"),
-        AUTO_CORAL_L3("kAutoL3"),
-        AUTO_CORAL_L4("kAutoL3"),
-        AUTO_CORAL_PICKUP("kAutoCoralPickup"),
-        AUTO_ALGAE_LOW_PICKUP("kAutoAlgaeLowPickup"),
-        AUTO_ALGAE_HIGH_PICKUP("kAutoAlgaeHighPickup"),
-        AUTO_ALGAE_PROCESSOR_SCORING("kAutoAlgaeProcessorScore"),
-        AUTO_ALGAE_NET_SCORING("kAutoAlgaeNetScore");
-
-        String displayName;
-
-        WantedState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        IDLE,
+        CORAL_PICKUP,
+        ALGAE_GROUND_PICKUP,
+        L1,
+        L2,
+        L3,
+        L4,
+        CLIMB,
+        AUTO_CORAL_L1,
+        AUTO_CORAL_L2,
+        AUTO_CORAL_L3,
+        AUTO_CORAL_L4,
+        AUTO_CORAL_PICKUP,
+        AUTO_ALGAE_LOW_PICKUP,
+        AUTO_ALGAE_HIGH_PICKUP,
+        AUTO_ALGAE_PROCESSOR_SCORING,
+        AUTO_ALGAE_NET_SCORING;
     }
 
     public enum RobotState {
-        IDLE("kIdle"),
-        ALGAE_LOW_PICKUP("kAlgaeLowPickup"),
-        ALGAE_HIGH_PICKUP("kAlgaeHighPickup"),
-        ALGAE_GROUND_PICKUP("kAlgaeGroundPickup"),
-        ALGAE_MARK_PICKUP("kAlgaeMarkPickup"),
-        ALGAE_PROCESSOR_SCORE("kProcessorScore"),
-        ALGAE_BARGE_SCORE("kBargeScore"),
-        CORAL_PICKUP("kCoralPickup"),
-        CORAL_L1_SCORE("kL1Scoring"),
-        CORAL_L2_SCORE("kL2Scoring"),
-        CORAL_L3_SCORE("kL3Scoring"),
-        CORAL_L4_SCORE("kL4Scoring"),
-        CLIMB("kClimb");
-
-        String displayName;
-
-        RobotState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-
+        IDLE,
+        ALGAE_LOW_PICKUP,
+        ALGAE_HIGH_PICKUP,
+        ALGAE_GROUND_PICKUP,
+        ALGAE_MARK_PICKUP,
+        ALGAE_PROCESSOR_SCORE,
+        ALGAE_BARGE_SCORE,
+        CORAL_PICKUP,
+        CORAL_L1_SCORE,
+        CORAL_L2_SCORE,
+        CORAL_L3_SCORE,
+        CORAL_L4_SCORE,
+        CLIMB;
     }
 
     /*** Basic collection of tasks "modes" that the robot has.
@@ -180,8 +160,10 @@ public class Superstructure extends SubsystemBase {
         if (isAutoEnabled.getAsBoolean()) {
             if (wantedState == WantedState.AUTO_ALGAE_HIGH_PICKUP) {
                 robotState = RobotState.ALGAE_HIGH_PICKUP;
+                effector.setRollerState(WheelState.ALGAE_INTAKE);
             } else if (wantedState == WantedState.AUTO_ALGAE_LOW_PICKUP) {
                 robotState = RobotState.ALGAE_LOW_PICKUP;
+                effector.setRollerState(WheelState.ALGAE_INTAKE);
             } else if (wantedState == WantedState.AUTO_ALGAE_NET_SCORING) {
                 robotState = RobotState.ALGAE_BARGE_SCORE;
             } else if (wantedState == WantedState.AUTO_ALGAE_PROCESSOR_SCORING) {
@@ -196,6 +178,7 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.CORAL_L4_SCORE;
             } else if (wantedState == WantedState.AUTO_CORAL_PICKUP) {
                 robotState = RobotState.CORAL_PICKUP;
+                effector.setRollerState(WheelState.CORAL_INTAKE);
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
             }
@@ -302,6 +285,12 @@ public class Superstructure extends SubsystemBase {
     public void applyState() {
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
+        } else if (robotState == RobotState.ALGAE_GROUND_PICKUP) {
+            elevator.setState(State.GROUND_ALGAE_INTAKE);
+        } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
+            elevator.setState(State.HIGH_ALGAE_INTAKE);
+        } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
+            elevator.setState(State.LOW_ALGAE_INTAKE);
         } else if (robotState == RobotState.CORAL_L1_SCORE) {
             elevator.setState(State.L1);
         } else if (robotState == RobotState.CORAL_L2_SCORE) {
@@ -312,9 +301,16 @@ public class Superstructure extends SubsystemBase {
             elevator.setState(State.L4);
         } else if (robotState == RobotState.CORAL_PICKUP) {
             elevator.setState(State.STOWED);
-        }  else if (robotState == RobotState.IDLE) {
+            effector.setRollerState(WheelState.CORAL_INTAKE);
+        } else if (robotState == RobotState.IDLE) {
             elevator.setState(State.STOWED);
-        }
+            effector.setState(PivotState.IDLE);
+            effector.setRollerState(WheelState.IDLE);
+        } else if (robotState == RobotState.CLIMB) {
+            elevator.setState(State.STOWED);
+            effector.setState(PivotState.IDLE);
+            effector.setRollerState(WheelState.IDLE);
+        } 
     }
 
     public void notifyInfo(String title, String desc, double secondsDisplayed) {
@@ -336,8 +332,8 @@ public class Superstructure extends SubsystemBase {
     public void periodic() {
 
         robotModePublisher.set(robotMode.getDisplayName());
-        wantedStatePublisher.set(wantedState.getDisplayName());
-        robotStatePublisher.set(robotState.getDisplayName());
+        wantedStatePublisher.set(wantedState.toString());
+        robotStatePublisher.set(robotState.toString());
         robotModeColorPublisher.set(robotMode.getColor());
     }
 

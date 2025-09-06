@@ -11,28 +11,18 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class Elevator extends SubsystemBase {
 
     public enum State {
-        IDLE("kIdle"),
-        STOWED("kStow"),
-        CORAL_INTAKE("kCoralIntake"),
-        GROUND_ALGAE_INTAKE("kGroundAlgaeIntake"),
-        LOW_ALGAE_INTAKE("kLowAlgaeIntake"),
-        HIGH_ALGAE_INTAKE("kHighAlgaeIntake"),
-        L1("kL1"),
-        L2("kL2"),
-        L3("kL3"),
-        L4("kL4"),
-        PROCESSOR("kProcessor"),
-        NET("kNet");
-
-        String displayName;
-
-        State(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        IDLE,
+        STOWED,
+        CORAL_INTAKE,
+        GROUND_ALGAE_INTAKE,
+        LOW_ALGAE_INTAKE,
+        HIGH_ALGAE_INTAKE,
+        L1,
+        L2,
+        L3,
+        L4,
+        PROCESSOR,
+        NET;
     }
 
     Superstructure superstructure;
@@ -73,7 +63,7 @@ public class Elevator extends SubsystemBase {
 
     @Override
     public void periodic() {
-        statePublisher.set(state.getDisplayName());
+        statePublisher.set(state.toString());
 
         setpointPublisher.set(setpoint);
     }

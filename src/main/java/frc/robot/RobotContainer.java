@@ -64,19 +64,29 @@ public class RobotContainer {
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
+
+        // Coral Commands
         NamedCommands.registerCommand("L1", superstructure.setState(WantedState.AUTO_CORAL_L1));
         NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2));
         NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3));
         NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
+
+        // Algae Commands
         NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING));
         NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING));
         NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP));
         NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP));
+
+        // Wait Until Commands
         NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
+
+        // Effector Wheel Commands
         NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.CORAL_PICKUP).andThen(effector.setWheelState(WheelState.CORAL_INTAKE)));
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
         NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
+
+        // Superstructure
         NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE));
         
     }
@@ -101,7 +111,6 @@ public class RobotContainer {
         );
 
         driverController.leftTrigger().onTrue(superstructure.setState(WantedState.CORAL_PICKUP)).onFalse(superstructure.setState(WantedState.IDLE));
-        // Right Trigger Will Automatically Track Coral
 
         driverController.leftBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getLeftReefBranch())));
         driverController.leftBumper().whileTrue(drivetrain.alignCommand);

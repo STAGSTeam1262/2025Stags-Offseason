@@ -10,34 +10,14 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class Effector extends SubsystemBase {
 
     public enum PivotState {
-        IDLE("kIdle");
-
-        String displayName;
-
-        PivotState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        IDLE;
     }
 
     public enum WheelState {
-        IDLE("kIdle"),
-        CORAL_INTAKE("kCoralIntake"),
-        ALGAE_INTAKE("kAlgaeIntake"),
-        EJECT("kEject");
-
-        String displayName;
-
-        WheelState(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        IDLE,
+        CORAL_INTAKE,
+        ALGAE_INTAKE,
+        EJECT;
     }
 
     Superstructure superstructure;
@@ -99,8 +79,8 @@ public class Effector extends SubsystemBase {
 
     @Override
     public void periodic() {
-        pivotStatePublisher.set(pivotState.getDisplayName());
-        wheelStatePublisher.set(wheelState.getDisplayName());
+        pivotStatePublisher.set(pivotState.toString());
+        wheelStatePublisher.set(wheelState.toString());
 
         wheelVoltagePublisher.set(wheelVoltage);
         pivotSetpointPublisher.set(pivotSetpoint);
