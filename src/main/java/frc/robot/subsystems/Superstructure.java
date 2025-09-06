@@ -100,6 +100,7 @@ public class Superstructure extends SubsystemBase {
     public Drivetrain drivetrain;
     public Effector effector;
     public Elevator elevator;
+    public Vision vision;
 
     // NTPublishers
     StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
@@ -127,6 +128,7 @@ public class Superstructure extends SubsystemBase {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
+        this.vision = vision;
 
         drivetrain.provideSubsystemAccessToSuperstructure(this);
         effector.provideSubsystemAccessToSuperstructure(this);
@@ -146,6 +148,10 @@ public class Superstructure extends SubsystemBase {
 
     public Elevator getElevator() {
         return elevator;
+    }
+
+    public Vision getVision() {
+        return vision;
     }
 
     public void setupTriggers() {
