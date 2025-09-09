@@ -81,7 +81,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
 
         // Effector Wheel Commands
-        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.CORAL_PICKUP).andThen(effector.setWheelState(WheelState.CORAL_INTAKE)));
+        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.CORAL_PICKUP));
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
         NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
