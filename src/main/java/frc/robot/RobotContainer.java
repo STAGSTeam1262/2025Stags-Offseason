@@ -23,12 +23,14 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Effector;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.Effector.WheelState;
+import frc.robot.subsystems.Superstructure.RobotMode;
 import frc.robot.subsystems.Superstructure.WantedState;
 
 public class RobotContainer {
@@ -47,7 +49,8 @@ public class RobotContainer {
     public final Vision vision = new Vision(drivetrain);
     public final Effector effector = new Effector();
     public final Elevator elevator = new Elevator();
-    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, vision);
+    public final Climber climber = new Climber();
+    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, vision, climber);
 
     public final CommandXboxController driverController = Constants.OperatorConstants.driverController.getController();
     public final CommandXboxController operatorController = Constants.OperatorConstants.operatorController.getController();
@@ -56,15 +59,6 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
-        autoChooser = AutoBuilder.buildAutoChooser("Tests");
-        SmartDashboard.putData("Auto Mode", autoChooser);
-        drivetrain.provideSubsystemAccessToSuperstructure(superstructure);
-
-        configureBindings();
-
-        // Warmup PathPlanner to avoid Java pauses
-        FollowPathCommand.warmupCommand().schedule();
-
         // Coral Commands
         NamedCommands.registerCommand("L1", superstructure.setState(WantedState.AUTO_CORAL_L1));
         NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2));
@@ -81,13 +75,22 @@ public class RobotContainer {
         NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
 
         // Effector Wheel Commands
-        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.CORAL_PICKUP));
+        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP));
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
         NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
 
         // Superstructure
         NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE));
+
+        autoChooser = AutoBuilder.buildAutoChooser("Tests");
+        SmartDashboard.putData("Auto Mode", autoChooser);
+        drivetrain.provideSubsystemAccessToSuperstructure(superstructure);
+
+        configureBindings();
+
+        // Warmup PathPlanner to avoid Java pauses
+        FollowPathCommand.warmupCommand().schedule();
         
     }
 
@@ -97,8 +100,8 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drive and steer stuff
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-MathUtil.applyDeadband(driverController.getLeftY(), 0.1) * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-MathUtil.applyDeadband(driverController.getLeftX(), 0.1) * MaxSpeed) // Drive left with negative X (left)
+                drive.withVelocityX(-MathUtil.applyDeadband(driverController.getLeftY(), 0.1) * (MaxSpeed * superstructure.driveSpeedMultiplier)) // Drive forward with negative Y (forward)
+                    .withVelocityY(-MathUtil.applyDeadband(driverController.getLeftX(), 0.1) * (MaxSpeed * superstructure.driveSpeedMultiplier)) // Drive left with negative X (left)
                     .withRotationalRate(-MathUtil.applyDeadband(driverController.getRightX(), 0.1) * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
@@ -110,24 +113,25 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        driverController.leftTrigger().onTrue(superstructure.setState(WantedState.CORAL_PICKUP)).onFalse(superstructure.setState(WantedState.IDLE));
-
         driverController.leftBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getLeftReefBranch())));
         driverController.leftBumper().whileTrue(drivetrain.alignCommand);
         driverController.rightBumper().onTrue(Commands.runOnce(() -> drivetrain.setTarget(drivetrain.getRightReefBranch())));
         driverController.rightBumper().whileTrue(drivetrain.alignCommand);
 
+        operatorController.leftTrigger().onTrue(elevator.set(-3).andThen(Commands.runOnce(() -> elevator.manual = true))).onFalse(Commands.runOnce(() -> elevator.stop()));
+        operatorController.rightTrigger().onTrue(elevator.set(3).andThen(Commands.runOnce(() -> elevator.manual = true))).onFalse(Commands.runOnce(() -> elevator.stop()));
+
         // reset the field-centric heading on left bumper press
         driverController.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-        // y will be whatever climb system we have
+        // driverController.y().onTrue(superstructure.climb());
 
-        operatorController.a().onTrue(effector.setWheelState(WheelState.ALGAE_INTAKE)).onFalse(effector.setWheelState(WheelState.IDLE));
+        operatorController.a().onTrue(effector.setWheelState(WheelState.CORAL_INTAKE).onlyIf(() -> superstructure.robotMode == RobotMode.IDLE)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.b().onTrue(effector.setWheelState(WheelState.EJECT)).onFalse(effector.setWheelState(WheelState.IDLE));
-        operatorController.x().onTrue(superstructure.setState(WantedState.IDLE));
+        operatorController.x().onTrue(effector.setWheelState(WheelState.ALGAE_INTAKE)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.y().onTrue(Commands.runOnce(() -> superstructure.toggleMode()));
 
         operatorController.povUp().onTrue(superstructure.setState(WantedState.L3));
-        operatorController.povDown().onTrue(superstructure.setState(WantedState.L1));
+        operatorController.povDown().onTrue(superstructure.setState(WantedState.IDLE));
         operatorController.povLeft().onTrue(superstructure.setState(WantedState.L2));
         operatorController.povRight().onTrue(superstructure.setState(WantedState.L4));
 

@@ -7,6 +7,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -98,9 +99,11 @@ public class Superstructure extends SubsystemBase {
     public RobotState robotState = RobotState.IDLE;
 
     public Drivetrain drivetrain;
+    public double driveSpeedMultiplier = 1;
     public Effector effector;
     public Elevator elevator;
     public Vision vision;
+    public Climber climber;
 
     // NTPublishers
     StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
@@ -121,19 +124,25 @@ public class Superstructure extends SubsystemBase {
     public Trigger isCoralScoringMode = new Trigger(() -> robotMode == RobotMode.CORAL);
     public Trigger isAlgaeScoringMode = new Trigger(() -> robotMode == RobotMode.ALGAE);
     public Trigger isClimbMode = new Trigger(() -> robotMode == RobotMode.CLIMB);
+
+    public Trigger isAtSetpoint;
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Vision vision) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Vision vision, Climber climber) {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
         this.vision = vision;
+        this.climber = climber;
 
         drivetrain.provideSubsystemAccessToSuperstructure(this);
         effector.provideSubsystemAccessToSuperstructure(this);
         elevator.provideSubsystemAccessToSuperstructure(this);
         vision.provideSubsystemAccessToSuperstructure(this);
+        climber.provideSubsystemAccessToSuperstructure(this);
+        
+        isAtSetpoint = new Trigger(elevator.isAtSetpoint);
 
         setupTriggers();
     }
@@ -155,8 +164,6 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void setupTriggers() {
-        isDisabled.onTrue(setState(WantedState.IDLE));
-        
         isEndgame.onTrue(
             Constants.OperatorConstants.driverController.blinkRumble(0.5, RumbleType.kBothRumble, 0.2)
             .alongWith(Constants.OperatorConstants.operatorController.blinkRumble(0.5, RumbleType.kBothRumble, 0.2)));
@@ -195,6 +202,8 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.ALGAE_BARGE_SCORE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
+            } else if (wantedState == WantedState.CLIMB) {
+                robotState = RobotState.CLIMB;
             }
         } else if (getRobotMode() == RobotMode.CORAL) {
             if (wantedState == WantedState.L1) {
@@ -207,6 +216,8 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.CORAL_L4_SCORE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
+            } else if (wantedState == WantedState.CLIMB) {
+                robotState = RobotState.CLIMB;
             }
         } else if (getRobotMode() == RobotMode.IDLE) {
             if (wantedState == WantedState.ALGAE_GROUND_PICKUP || wantedState == WantedState.L1) {
@@ -219,6 +230,8 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.ALGAE_HIGH_PICKUP;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
+            } else if (wantedState == WantedState.CLIMB) {
+                robotState = RobotState.CLIMB;
             }
         }
         applyState();
@@ -288,34 +301,60 @@ public class Superstructure extends SubsystemBase {
         return drivetrain.target;
     }
 
+    public void workClimber() {
+        if (climber.nextClimberPosition()) {
+            setWantedState(WantedState.CLIMB);
+        } else {
+            setWantedState(WantedState.IDLE);
+        }
+    }
+
+    public Command climb() {
+        return Commands.runOnce(() -> workClimber());
+    }
+
     public void applyState() {
+        driveSpeedMultiplier = 1;
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
+            effector.setState(PivotState.NET_SCORE);
         } else if (robotState == RobotState.ALGAE_GROUND_PICKUP) {
             elevator.setState(State.GROUND_ALGAE_INTAKE);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
             elevator.setState(State.HIGH_ALGAE_INTAKE);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
             elevator.setState(State.LOW_ALGAE_INTAKE);
+            effector.setState(PivotState.STOWED);
+        } else if (robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
+            elevator.setState(State.PROCESSOR);
+            effector.setState(PivotState.PROCESSOR_SCORE);
         } else if (robotState == RobotState.CORAL_L1_SCORE) {
             elevator.setState(State.L1);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_L2_SCORE) {
             elevator.setState(State.L2);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_L3_SCORE) {
             elevator.setState(State.L3);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_L4_SCORE) {
             elevator.setState(State.L4);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_PICKUP) {
             elevator.setState(State.STOWED);
             effector.setRollerState(WheelState.CORAL_INTAKE);
+            effector.setState(PivotState.STOWED);
         } else if (robotState == RobotState.IDLE) {
             elevator.setState(State.STOWED);
-            effector.setState(PivotState.IDLE);
+            effector.setState(PivotState.STOWED);
             effector.setRollerState(WheelState.IDLE);
         } else if (robotState == RobotState.CLIMB) {
             elevator.setState(State.STOWED);
-            effector.setState(PivotState.IDLE);
+            effector.setState(PivotState.STOWED);
             effector.setRollerState(WheelState.IDLE);
+            driveSpeedMultiplier = 0.5;
         } 
     }
 
@@ -336,11 +375,11 @@ public class Superstructure extends SubsystemBase {
 
     @Override
     public void periodic() {
-
         robotModePublisher.set(robotMode.getDisplayName());
         wantedStatePublisher.set(wantedState.toString());
         robotStatePublisher.set(robotState.toString());
         robotModeColorPublisher.set(robotMode.getColor());
+        SmartDashboard.putNumber("Drive Speed x", driveSpeedMultiplier);
     }
 
 }
