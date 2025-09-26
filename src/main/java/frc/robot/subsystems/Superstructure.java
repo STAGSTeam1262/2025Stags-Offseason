@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.hardware.CANrange;
 import com.therekrab.autopilot.APTarget;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,6 +13,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.subsystems.Effector.PivotState;
@@ -27,10 +29,8 @@ public class Superstructure extends SubsystemBase {
      * The different states of the robot.
      */
     public enum RobotMode {
-        IDLE("kIdle", new Color(0, 0, 0)),
-        CORAL("kCoral", new Color(200, 200, 200)),
-        ALGAE("kAlgae", new Color(28, 254, 112)),
-        CLIMB("kClimb", new Color(255, 0, 0));
+        IDLE("kIdle", new Color(0, 30, 225)),
+        CORAL("kCoral", new Color(200, 200, 200));
 
         String displayName;
         Color color;
@@ -51,14 +51,11 @@ public class Superstructure extends SubsystemBase {
 
     public enum WantedState {
         IDLE,
-        CORAL_PICKUP,
-        ALGAE_GROUND_PICKUP,
         L1,
         L2,
         L3,
         L4,
         CLIMB,
-        AUTO_CORAL_L1,
         AUTO_CORAL_L2,
         AUTO_CORAL_L3,
         AUTO_CORAL_L4,
@@ -73,12 +70,8 @@ public class Superstructure extends SubsystemBase {
         IDLE,
         ALGAE_LOW_PICKUP,
         ALGAE_HIGH_PICKUP,
-        ALGAE_GROUND_PICKUP,
-        ALGAE_MARK_PICKUP,
         ALGAE_PROCESSOR_SCORE,
         ALGAE_BARGE_SCORE,
-        CORAL_PICKUP,
-        CORAL_L1_SCORE,
         CORAL_L2_SCORE,
         CORAL_L3_SCORE,
         CORAL_L4_SCORE,
@@ -105,6 +98,8 @@ public class Superstructure extends SubsystemBase {
     public Vision vision;
     public Climber climber;
 
+    CANrange coralSensor = new CANrange(19, "Canivore");
+
     // NTPublishers
     StringPublisher robotModePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/RobotMode").publish();
     StringPublisher wantedStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Superstructure/WantedState").publish();
@@ -122,10 +117,10 @@ public class Superstructure extends SubsystemBase {
 
     public Trigger isIdleMode = new Trigger(() -> robotMode == RobotMode.IDLE);
     public Trigger isCoralScoringMode = new Trigger(() -> robotMode == RobotMode.CORAL);
-    public Trigger isAlgaeScoringMode = new Trigger(() -> robotMode == RobotMode.ALGAE);
-    public Trigger isClimbMode = new Trigger(() -> robotMode == RobotMode.CLIMB);
 
     public Trigger isAtSetpoint;
+
+    public Trigger coralDetected = new Trigger(() -> coralSensor.isConnected() && coralSensor.getIsDetected().getValue());
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
@@ -141,8 +136,6 @@ public class Superstructure extends SubsystemBase {
         elevator.provideSubsystemAccessToSuperstructure(this);
         vision.provideSubsystemAccessToSuperstructure(this);
         climber.provideSubsystemAccessToSuperstructure(this);
-        
-        isAtSetpoint = new Trigger(elevator.isAtSetpoint);
 
         setupTriggers();
     }
@@ -167,22 +160,21 @@ public class Superstructure extends SubsystemBase {
         isEndgame.onTrue(
             Constants.OperatorConstants.driverController.blinkRumble(0.5, RumbleType.kBothRumble, 0.2)
             .alongWith(Constants.OperatorConstants.operatorController.blinkRumble(0.5, RumbleType.kBothRumble, 0.2)));
+
+        isAtSetpoint = new Trigger(elevator.isAtSetpoint);
+        coralDetected.onTrue(setMode(RobotMode.CORAL).andThen(() -> new WaitUntilCommand(0.2).andThen(effector.setWheelState(WheelState.IDLE)))).onFalse(setMode(RobotMode.IDLE));
     }
 
     public void handleStateTransition() {
         if (isAutoEnabled.getAsBoolean()) {
             if (wantedState == WantedState.AUTO_ALGAE_HIGH_PICKUP) {
                 robotState = RobotState.ALGAE_HIGH_PICKUP;
-                effector.setRollerState(WheelState.ALGAE_INTAKE);
             } else if (wantedState == WantedState.AUTO_ALGAE_LOW_PICKUP) {
                 robotState = RobotState.ALGAE_LOW_PICKUP;
-                effector.setRollerState(WheelState.ALGAE_INTAKE);
             } else if (wantedState == WantedState.AUTO_ALGAE_NET_SCORING) {
                 robotState = RobotState.ALGAE_BARGE_SCORE;
             } else if (wantedState == WantedState.AUTO_ALGAE_PROCESSOR_SCORING) {
                 robotState = RobotState.ALGAE_PROCESSOR_SCORE;
-            } else if (wantedState == WantedState.AUTO_CORAL_L1) {
-                robotState = RobotState.CORAL_L1_SCORE;
             } else if (wantedState == WantedState.AUTO_CORAL_L2) {
                 robotState = RobotState.CORAL_L2_SCORE;
             } else if (wantedState == WantedState.AUTO_CORAL_L3) {
@@ -190,24 +182,13 @@ public class Superstructure extends SubsystemBase {
             } else if (wantedState == WantedState.AUTO_CORAL_L4) {
                 robotState = RobotState.CORAL_L4_SCORE;
             } else if (wantedState == WantedState.AUTO_CORAL_PICKUP) {
-                robotState = RobotState.CORAL_PICKUP;
-                effector.setRollerState(WheelState.CORAL_INTAKE);
+                robotState = RobotState.IDLE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
-            }
-        } else if (getRobotMode() == RobotMode.ALGAE) {
-            if (wantedState == WantedState.L1) {
-                robotState = RobotState.ALGAE_PROCESSOR_SCORE;
-            } else if (wantedState == WantedState.L4) {
-                robotState = RobotState.ALGAE_BARGE_SCORE;
-            } else if (wantedState == WantedState.IDLE) {
-                robotState = RobotState.IDLE;
-            } else if (wantedState == WantedState.CLIMB) {
-                robotState = RobotState.CLIMB;
             }
         } else if (getRobotMode() == RobotMode.CORAL) {
             if (wantedState == WantedState.L1) {
-                robotState = RobotState.CORAL_L1_SCORE;
+                robotState = RobotState.IDLE;
             } else if (wantedState == WantedState.L2) {
                 robotState = RobotState.CORAL_L2_SCORE;
             } else if (wantedState == WantedState.L3) {
@@ -220,14 +201,14 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.CLIMB;
             }
         } else if (getRobotMode() == RobotMode.IDLE) {
-            if (wantedState == WantedState.ALGAE_GROUND_PICKUP || wantedState == WantedState.L1) {
-                robotState = RobotState.ALGAE_GROUND_PICKUP;
-            } else if (wantedState == WantedState.CORAL_PICKUP) {
-                robotState = RobotState.CORAL_PICKUP;
+            if (wantedState == WantedState.L1) {
+                robotState = RobotState.ALGAE_PROCESSOR_SCORE;
             } else if (wantedState == WantedState.L2) {
                 robotState = RobotState.ALGAE_LOW_PICKUP;
             } else if (wantedState == WantedState.L3) {
                 robotState = RobotState.ALGAE_HIGH_PICKUP;
+            } else if (wantedState == WantedState.L4) {
+                robotState = RobotState.ALGAE_BARGE_SCORE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
             } else if (wantedState == WantedState.CLIMB) {
@@ -254,12 +235,10 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void toggleMode() {
-        if (robotMode == RobotMode.ALGAE) {
-            setRobotMode(RobotMode.CORAL);
-        } else if (robotMode == RobotMode.CORAL) {
+        if (robotMode == RobotMode.CORAL) {
             setRobotMode(RobotMode.IDLE);
         } else if (robotMode == RobotMode.IDLE) {
-            setRobotMode(RobotMode.ALGAE);
+            setRobotMode(RobotMode.CORAL);
         }
     }
 
@@ -317,45 +296,33 @@ public class Superstructure extends SubsystemBase {
         driveSpeedMultiplier = 1;
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
-            effector.setState(PivotState.NET_SCORE);
-        } else if (robotState == RobotState.ALGAE_GROUND_PICKUP) {
-            elevator.setState(State.GROUND_ALGAE_INTAKE);
-            effector.setState(PivotState.STOWED);
+            effector.setPivotState(PivotState.NET_SCORE);
         } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
             elevator.setState(State.HIGH_ALGAE_INTAKE);
-            effector.setState(PivotState.STOWED);
+            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
             elevator.setState(State.LOW_ALGAE_INTAKE);
-            effector.setState(PivotState.STOWED);
+            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
-            elevator.setState(State.PROCESSOR);
-            effector.setState(PivotState.PROCESSOR_SCORE);
-        } else if (robotState == RobotState.CORAL_L1_SCORE) {
-            elevator.setState(State.L1);
-            effector.setState(PivotState.STOWED);
-        } else if (robotState == RobotState.CORAL_L2_SCORE) {
-            elevator.setState(State.L2);
-            effector.setState(PivotState.STOWED);
-        } else if (robotState == RobotState.CORAL_L3_SCORE) {
-            elevator.setState(State.L3);
-            effector.setState(PivotState.STOWED);
-        } else if (robotState == RobotState.CORAL_L4_SCORE) {
-            elevator.setState(State.L4);
-            effector.setState(PivotState.STOWED);
-        } else if (robotState == RobotState.CORAL_PICKUP) {
             elevator.setState(State.STOWED);
-            effector.setRollerState(WheelState.CORAL_INTAKE);
-            effector.setState(PivotState.STOWED);
-        } else if (robotState == RobotState.IDLE) {
-            elevator.setState(State.STOWED);
-            effector.setState(PivotState.STOWED);
-            effector.setRollerState(WheelState.IDLE);
+            effector.setPivotState(PivotState.PROCESSOR_SCORE);
         } else if (robotState == RobotState.CLIMB) {
             elevator.setState(State.STOWED);
-            effector.setState(PivotState.STOWED);
-            effector.setRollerState(WheelState.IDLE);
+            effector.setPivotState(PivotState.STOWED);
             driveSpeedMultiplier = 0.5;
-        } 
+        } else if (robotState == RobotState.CORAL_L2_SCORE) {
+            elevator.setState(State.L2);
+            effector.setPivotState(PivotState.STOWED);
+        } else if (robotState == RobotState.CORAL_L3_SCORE) {
+            elevator.setState(State.L3);
+            effector.setPivotState(PivotState.STOWED);
+        } else if (robotState == RobotState.CORAL_L4_SCORE) {
+            elevator.setState(State.L4);
+            effector.setPivotState(PivotState.STOWED);
+        } else if (robotState == RobotState.IDLE) {
+            elevator.setState(State.STOWED);
+            effector.setPivotState(PivotState.STOWED);
+        }
     }
 
     public void notifyInfo(String title, String desc, double secondsDisplayed) {
@@ -379,7 +346,7 @@ public class Superstructure extends SubsystemBase {
         wantedStatePublisher.set(wantedState.toString());
         robotStatePublisher.set(robotState.toString());
         robotModeColorPublisher.set(robotMode.getColor());
-        SmartDashboard.putNumber("Drive Speed x", driveSpeedMultiplier);
+        SmartDashboard.putNumber("Drive Speed Multiplier", driveSpeedMultiplier);
     }
 
 }

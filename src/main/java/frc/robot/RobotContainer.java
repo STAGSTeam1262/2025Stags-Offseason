@@ -30,7 +30,6 @@ import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.Effector.WheelState;
-import frc.robot.subsystems.Superstructure.RobotMode;
 import frc.robot.subsystems.Superstructure.WantedState;
 
 public class RobotContainer {
@@ -60,7 +59,6 @@ public class RobotContainer {
 
     public RobotContainer() {
         // Coral Commands
-        NamedCommands.registerCommand("L1", superstructure.setState(WantedState.AUTO_CORAL_L1));
         NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2));
         NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3));
         NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
@@ -78,6 +76,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP));
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
         NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
+        NamedCommands.registerCommand("ejectCoral", effector.setWheelState(WheelState.EJECT));
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
 
         // Superstructure
@@ -123,15 +122,16 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         driverController.a().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        driverController.start().onTrue(Commands.runOnce(() -> superstructure.stop()));
         // driverController.y().onTrue(superstructure.climb());
 
-        operatorController.a().onTrue(effector.setWheelState(WheelState.CORAL_INTAKE).onlyIf(() -> superstructure.robotMode == RobotMode.IDLE)).onFalse(effector.setWheelState(WheelState.IDLE));
+        operatorController.a().onTrue(effector.setWheelState(WheelState.CORAL_INTAKE).onlyIf(superstructure.coralDetected.negate())).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.b().onTrue(effector.setWheelState(WheelState.EJECT)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.x().onTrue(effector.setWheelState(WheelState.ALGAE_INTAKE)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.y().onTrue(Commands.runOnce(() -> superstructure.toggleMode()));
 
         operatorController.povUp().onTrue(superstructure.setState(WantedState.L3));
-        operatorController.povDown().onTrue(superstructure.setState(WantedState.IDLE));
+        operatorController.povDown().onTrue(superstructure.setState(WantedState.L1));
         operatorController.povLeft().onTrue(superstructure.setState(WantedState.L2));
         operatorController.povRight().onTrue(superstructure.setState(WantedState.L4));
 

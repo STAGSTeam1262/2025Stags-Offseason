@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.networktables.DoublePublisher;
@@ -34,13 +35,13 @@ public class Effector extends SubsystemBase {
         EJECT;
     }
 
-    // TalonFX wheelMotor = new TalonFX(Constants.MotorIDConstants.effectorWheelID, "Canivore");
-    // TalonFX pivotMotor = new TalonFX(Constants.MotorIDConstants.effectorPivotID, "Canivore");
-    // TalonFX funnelMotor = new TalonFX(Constants.MotorIDConstants.funnelConveyorID, "Canivore");
+    TalonFX wheelMotor = new TalonFX(Constants.MotorIDConstants.effectorWheelID, "Canivore");
+    TalonFX pivotMotor = new TalonFX(Constants.MotorIDConstants.effectorPivotID, "Canivore");
+    TalonFX funnelMotor = new TalonFX(Constants.MotorIDConstants.funnelConveyorID, "Canivore");
 
     Superstructure superstructure;
 
-    public PivotState pivotState = PivotState.STOWED;
+    public PivotState pivotState = PivotState.DISABLED;
     StringPublisher pivotStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/PivotState").publish();
     public WheelState wheelState = WheelState.IDLE;
     StringPublisher wheelStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/WheelState").publish();
@@ -49,12 +50,14 @@ public class Effector extends SubsystemBase {
     public double pivotSetpoint = 0;
     DoublePublisher pivotSetpointPublisher = NetworkTableInstance.getDefault().getDoubleTopic("Subsystems/Effector/Pivot Setpoint").publish();
 
+    MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
+
     Trigger setup = new Trigger(() -> DriverStation.isEnabled()).onTrue(setPivotState(PivotState.STOWED));
     
     /*** The end effector of the robot. */
     public Effector() {
         configureMotors();
-        // pivotMotor.setPosition(0);
+        pivotMotor.setPosition(0);
     }
 
     public void configureMotors() {
@@ -69,12 +72,12 @@ public class Effector extends SubsystemBase {
             .withKG(0.0);
 
         TalonFXConfiguration config = new TalonFXConfiguration().withMotionMagic(mmConfig).withSlot0(slot0Configs);
-        // pivotMotor.getConfigurator().apply(config);
+        pivotMotor.getConfigurator().apply(config);
     }
 
     public void stop() {
-        // pivotMotor.stopMotor();
-        // wheelMotor.stopMotor();
+        pivotMotor.stopMotor();
+        wheelMotor.stopMotor();
     }
 
     public void setState(PivotState state) {
@@ -89,13 +92,6 @@ public class Effector extends SubsystemBase {
     public void setRollerState(WheelState state) {
         wheelState = state;
         handleWheelState();
-        if (wheelState == WheelState.ALGAE_INTAKE) {
-            if (superstructure.robotState == RobotState.ALGAE_GROUND_PICKUP) {
-                setState(PivotState.GROUND_INTAKE);
-            } else if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
-                setState(PivotState.REEF_INTAKE);
-            }
-        }
     }
 
     public Command setWheelState(WheelState state) {
@@ -128,9 +124,7 @@ public class Effector extends SubsystemBase {
 
     public void handleWheelState() {
         if (wheelState == WheelState.ALGAE_INTAKE) {
-            if (superstructure.robotState == RobotState.ALGAE_GROUND_PICKUP) {
-                setState(PivotState.GROUND_INTAKE);
-            } else if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
+            if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
                 setState(PivotState.REEF_INTAKE);
             }
         } else if (wheelState == WheelState.CORAL_INTAKE) {
@@ -142,6 +136,18 @@ public class Effector extends SubsystemBase {
         } else {
 
         }
+    }
+
+    public void movePivotToSetpoint(double setpoint) {
+        pivotMotor.setControl(motionMagicRequest.withPosition(setpoint));
+    }
+
+    public void setWheelVoltage(double voltage) {
+        wheelMotor.setVoltage(voltage);
+    }
+
+    public void setConveyorVoltage(double voltage) {
+        funnelMotor.setVoltage(voltage);
     }
 
     public void provideSubsystemAccessToSuperstructure(Superstructure superstructure) {
