@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,6 +25,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     field = new Field2d();
     SmartDashboard.putData(field);
+    PortForwarder.add(5800, "photonvision.local", 5800);
   }
 
   @Override

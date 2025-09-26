@@ -96,7 +96,6 @@ public class Superstructure extends SubsystemBase {
     public Effector effector;
     public Elevator elevator;
     public Vision vision;
-    public Climber climber;
 
     CANrange coralSensor = new CANrange(19, "Canivore");
 
@@ -124,18 +123,16 @@ public class Superstructure extends SubsystemBase {
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
-    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Vision vision, Climber climber) {
+    public Superstructure(Drivetrain drivetrain, Effector effector, Elevator elevator, Vision vision) {
         this.drivetrain = drivetrain;
         this.effector = effector;
         this.elevator = elevator;
         this.vision = vision;
-        this.climber = climber;
 
         drivetrain.provideSubsystemAccessToSuperstructure(this);
         effector.provideSubsystemAccessToSuperstructure(this);
         elevator.provideSubsystemAccessToSuperstructure(this);
         vision.provideSubsystemAccessToSuperstructure(this);
-        climber.provideSubsystemAccessToSuperstructure(this);
 
         setupTriggers();
     }
@@ -162,7 +159,8 @@ public class Superstructure extends SubsystemBase {
             .alongWith(Constants.OperatorConstants.operatorController.blinkRumble(0.5, RumbleType.kBothRumble, 0.2)));
 
         isAtSetpoint = new Trigger(elevator.isAtSetpoint);
-        coralDetected.onTrue(setMode(RobotMode.CORAL).andThen(() -> new WaitUntilCommand(0.2).andThen(effector.setWheelState(WheelState.IDLE)))).onFalse(setMode(RobotMode.IDLE));
+        isCoralScoringMode.onTrue(effector.setPivotState(PivotState.STOWED));
+        coralDetected.onTrue(setMode(RobotMode.CORAL).asProxy().andThen(() -> new WaitUntilCommand(0.2).andThen(effector.setWheelState(WheelState.IDLE).asProxy()))).onFalse(setMode(RobotMode.IDLE).asProxy());
     }
 
     public void handleStateTransition() {
@@ -197,8 +195,6 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.CORAL_L4_SCORE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
-            } else if (wantedState == WantedState.CLIMB) {
-                robotState = RobotState.CLIMB;
             }
         } else if (getRobotMode() == RobotMode.IDLE) {
             if (wantedState == WantedState.L1) {
@@ -211,8 +207,6 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.ALGAE_BARGE_SCORE;
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
-            } else if (wantedState == WantedState.CLIMB) {
-                robotState = RobotState.CLIMB;
             }
         }
         applyState();
@@ -279,7 +273,7 @@ public class Superstructure extends SubsystemBase {
     public APTarget getAlignmentTarget() {
         return drivetrain.target;
     }
-
+    /*
     public void workClimber() {
         if (climber.nextClimberPosition()) {
             setWantedState(WantedState.CLIMB);
@@ -287,41 +281,29 @@ public class Superstructure extends SubsystemBase {
             setWantedState(WantedState.IDLE);
         }
     }
-
+    
     public Command climb() {
         return Commands.runOnce(() -> workClimber());
     }
-
+    */
     public void applyState() {
         driveSpeedMultiplier = 1;
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
-            effector.setPivotState(PivotState.NET_SCORE);
         } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
             elevator.setState(State.HIGH_ALGAE_INTAKE);
-            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
             elevator.setState(State.LOW_ALGAE_INTAKE);
-            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
             elevator.setState(State.STOWED);
-            effector.setPivotState(PivotState.PROCESSOR_SCORE);
-        } else if (robotState == RobotState.CLIMB) {
-            elevator.setState(State.STOWED);
-            effector.setPivotState(PivotState.STOWED);
-            driveSpeedMultiplier = 0.5;
         } else if (robotState == RobotState.CORAL_L2_SCORE) {
             elevator.setState(State.L2);
-            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_L3_SCORE) {
             elevator.setState(State.L3);
-            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.CORAL_L4_SCORE) {
             elevator.setState(State.L4);
-            effector.setPivotState(PivotState.STOWED);
         } else if (robotState == RobotState.IDLE) {
             elevator.setState(State.STOWED);
-            effector.setPivotState(PivotState.STOWED);
         }
     }
 

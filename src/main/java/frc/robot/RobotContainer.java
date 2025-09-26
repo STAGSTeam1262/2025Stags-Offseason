@@ -23,7 +23,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Effector;
 import frc.robot.subsystems.Elevator;
@@ -48,8 +47,7 @@ public class RobotContainer {
     public final Vision vision = new Vision(drivetrain);
     public final Effector effector = new Effector();
     public final Elevator elevator = new Elevator();
-    public final Climber climber = new Climber();
-    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, vision, climber);
+    public final Superstructure superstructure = new Superstructure(drivetrain, effector, elevator, vision);
 
     public final CommandXboxController driverController = Constants.OperatorConstants.driverController.getController();
     public final CommandXboxController operatorController = Constants.OperatorConstants.operatorController.getController();
@@ -59,28 +57,29 @@ public class RobotContainer {
 
     public RobotContainer() {
         // Coral Commands
-        NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2));
-        NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3));
-        NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
+        NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2).onlyIf(superstructure.isCoralScoringMode).asProxy());
+        NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3).onlyIf(superstructure.isCoralScoringMode).asProxy());
+        NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4).onlyIf(superstructure.isCoralScoringMode).asProxy());
 
         // Algae Commands
-        NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING));
-        NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING));
-        NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP));
-        NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP));
+        NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING).asProxy());
+        NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING).asProxy());
+        NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP).asProxy());
+        NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP).asProxy());
 
         // Wait Until Commands
-        NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
+        NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint).asProxy());
+        NamedCommands.registerCommand("hasCoral", new WaitUntilCommand(superstructure.coralDetected).asProxy());
 
         // Effector Wheel Commands
-        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP));
-        NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE));
-        NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT));
-        NamedCommands.registerCommand("ejectCoral", effector.setWheelState(WheelState.EJECT));
-        NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE));
+        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP).onlyIf(superstructure.isIdleMode).asProxy());
+        NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE).asProxy());
+        NamedCommands.registerCommand("eject", effector.setWheelState(WheelState.EJECT).asProxy());
+        NamedCommands.registerCommand("ejectCoral", effector.setWheelState(WheelState.EJECT).onlyIf(superstructure.isCoralScoringMode).asProxy());
+        NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE).asProxy());
 
         // Superstructure
-        NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE));
+        NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE).asProxy());
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
@@ -125,10 +124,11 @@ public class RobotContainer {
         driverController.start().onTrue(Commands.runOnce(() -> superstructure.stop()));
         // driverController.y().onTrue(superstructure.climb());
 
-        operatorController.a().onTrue(effector.setWheelState(WheelState.CORAL_INTAKE).onlyIf(superstructure.coralDetected.negate())).onFalse(effector.setWheelState(WheelState.IDLE));
+        operatorController.a().onTrue(effector.setWheelState(WheelState.CORAL_INTAKE).onlyIf(superstructure.isIdleMode)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.b().onTrue(effector.setWheelState(WheelState.EJECT)).onFalse(effector.setWheelState(WheelState.IDLE));
         operatorController.x().onTrue(effector.setWheelState(WheelState.ALGAE_INTAKE)).onFalse(effector.setWheelState(WheelState.IDLE));
-        operatorController.y().onTrue(Commands.runOnce(() -> superstructure.toggleMode()));
+        operatorController.rightBumper().onTrue(Commands.runOnce(() -> superstructure.toggleMode()));
+        operatorController.y().onTrue(effector.pivotToggle());
 
         operatorController.povUp().onTrue(superstructure.setState(WantedState.L3));
         operatorController.povDown().onTrue(superstructure.setState(WantedState.L1));

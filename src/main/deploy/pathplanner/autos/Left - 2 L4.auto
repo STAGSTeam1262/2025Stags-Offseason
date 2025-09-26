@@ -25,7 +25,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.2
+            "waitTime": 0.4
           }
         },
         {
@@ -37,7 +37,13 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.4
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "idle"
           }
         },
         {
@@ -53,9 +59,15 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "hasCoral"
+          }
+        },
+        {
           "type": "wait",
           "data": {
-            "waitTime": 2.0
+            "waitTime": 0.25
           }
         },
         {
@@ -79,7 +91,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.2
+            "waitTime": 0.4
           }
         },
         {
@@ -92,12 +104,6 @@
           "type": "wait",
           "data": {
             "waitTime": 0.4
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "idle"
           }
         }
       ]

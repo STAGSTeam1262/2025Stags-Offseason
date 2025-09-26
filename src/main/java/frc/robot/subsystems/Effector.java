@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -20,12 +22,9 @@ import frc.robot.subsystems.Superstructure.RobotState;
 public class Effector extends SubsystemBase {
 
     public enum PivotState {
-        DISABLED,
         STOWED,
-        GROUND_INTAKE,
-        REEF_INTAKE,
-        PROCESSOR_SCORE,
-        NET_SCORE;
+        ALGAE,
+        PROCESSOR_SCORE;
     }
 
     public enum WheelState {
@@ -41,7 +40,7 @@ public class Effector extends SubsystemBase {
 
     Superstructure superstructure;
 
-    public PivotState pivotState = PivotState.DISABLED;
+    public PivotState pivotState = PivotState.STOWED;
     StringPublisher pivotStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/PivotState").publish();
     public WheelState wheelState = WheelState.IDLE;
     StringPublisher wheelStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/WheelState").publish();
@@ -70,8 +69,8 @@ public class Effector extends SubsystemBase {
             .withKV(0.12)
             .withKA(0.01)
             .withKG(0.0);
-
-        TalonFXConfiguration config = new TalonFXConfiguration().withMotionMagic(mmConfig).withSlot0(slot0Configs);
+        MotorOutputConfigs outputConfig = new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake);
+        TalonFXConfiguration config = new TalonFXConfiguration().withMotionMagic(mmConfig).withSlot0(slot0Configs).withMotorOutput(outputConfig);
         pivotMotor.getConfigurator().apply(config);
     }
 
@@ -107,13 +106,7 @@ public class Effector extends SubsystemBase {
     }
 
     public void handlePivotState() {
-        if (pivotState == PivotState.GROUND_INTAKE) {
-
-        } else if (pivotState == PivotState.NET_SCORE) {
-
-        } else if (pivotState == PivotState.PROCESSOR_SCORE) {
-
-        } else if (pivotState == PivotState.REEF_INTAKE) {
+        if (pivotState == PivotState.PROCESSOR_SCORE) {
 
         } else if (pivotState == PivotState.STOWED) {
 
@@ -125,17 +118,33 @@ public class Effector extends SubsystemBase {
     public void handleWheelState() {
         if (wheelState == WheelState.ALGAE_INTAKE) {
             if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
-                setState(PivotState.REEF_INTAKE);
+                setState(PivotState.ALGAE);
             }
         } else if (wheelState == WheelState.CORAL_INTAKE) {
 
         } else if (wheelState == WheelState.EJECT) {
-
+            if (superstructure.robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
+                setState(PivotState.PROCESSOR_SCORE);
+            }
         } else if (wheelState == WheelState.IDLE) {
 
         } else {
 
         }
+    }
+
+    public void togglePivot() {
+        if (pivotState == PivotState.ALGAE) {
+            setState(PivotState.STOWED);
+        } else if (pivotState == PivotState.STOWED) {
+            setState(PivotState.ALGAE);
+        } else {
+            setState(PivotState.ALGAE);
+        }
+    }
+
+    public Command pivotToggle() {
+        return Commands.runOnce(() -> togglePivot());
     }
 
     public void movePivotToSetpoint(double setpoint) {

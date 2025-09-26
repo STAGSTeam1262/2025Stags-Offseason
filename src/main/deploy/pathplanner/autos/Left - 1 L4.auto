@@ -25,7 +25,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.2
+            "waitTime": 0.4
           }
         },
         {
@@ -37,13 +37,31 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.4
+            "waitTime": 0.2
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "idle"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "intakeCoral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left 2"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "hasCoral"
           }
         }
       ]
