@@ -5,6 +5,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -69,7 +70,7 @@ public class Elevator extends SubsystemBase {
 
     public void configureMotors() {
         MotorOutputConfigs motorOutputConfigs = new MotorOutputConfigs().withNeutralMode(NeutralModeValue.Brake);
-        MotionMagicConfigs mmConfigs = new MotionMagicConfigs().withMotionMagicCruiseVelocity(80).withMotionMagicAcceleration(160);
+        MotionMagicConfigs mmConfigs = new MotionMagicConfigs().withMotionMagicCruiseVelocity(60).withMotionMagicAcceleration(200);
         Slot0Configs slot0Configs = new Slot0Configs()
             .withKP(4.8)
             .withKI(0.0)
@@ -85,10 +86,10 @@ public class Elevator extends SubsystemBase {
             .withKS(0.0)
             .withKV(0.0)
             .withKA(0.0)
-            .withKG(0.0);
+            .withKG(-2.3);
         TalonFXConfiguration config = new TalonFXConfiguration().withMotionMagic(mmConfigs).withSlot0(slot0Configs).withSlot1(slot1Configs).withMotorOutput(motorOutputConfigs);
         motorA.getConfigurator().apply(config);
-        config.withMotorOutput(motorOutputConfigs.withInverted(InvertedValue.Clockwise_Positive));
+        config = config.withMotorOutput(motorOutputConfigs.withInverted(InvertedValue.Clockwise_Positive));
         motorB.getConfigurator().apply(config);
     }
 
@@ -114,6 +115,7 @@ public class Elevator extends SubsystemBase {
     public void moveToSetpoint(double setpoint) {
         motorA.setControl(motionMagicRequest.withPosition(setpoint));
         motorB.setControl(motionMagicRequest.withPosition(setpoint));
+        this.setpoint = setpoint;
         manual = false;
     }
 
@@ -122,7 +124,17 @@ public class Elevator extends SubsystemBase {
     }
 
     public void handleStateTransition() {
-        
+        if (state == State.STOWED) {
+            moveToSetpoint(0);
+        } else if (state == State.L2) {
+            moveToSetpoint(-20);
+        } else if (state == State.L3) {
+            moveToSetpoint(-31);
+        } else if (state == State.L4) {
+            moveToSetpoint(-48);
+        } else if (state == State.NET) {
+            moveToSetpoint(-54);
+        }
     }
 
     public void provideSubsystemAccessToSuperstructure(Superstructure superstructure) {

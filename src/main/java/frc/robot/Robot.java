@@ -17,7 +17,7 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  private final boolean kUseLimelight = false;
+  private final boolean kUseLimelight = true;
 
   private Field2d field;
 
@@ -25,7 +25,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     field = new Field2d();
     SmartDashboard.putData(field);
-    PortForwarder.add(5800, "photonvision.local", 5800);
+    PortForwarder.add(5800, "limelight.local", 5800);
   }
 
   @Override

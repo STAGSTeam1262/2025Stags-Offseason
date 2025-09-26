@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
@@ -119,7 +120,7 @@ public class Superstructure extends SubsystemBase {
 
     public Trigger isAtSetpoint;
 
-    public Trigger coralDetected = new Trigger(() -> coralSensor.isConnected() && coralSensor.getIsDetected().getValue());
+    public Trigger coralDetected = new Trigger(() -> coralSensor.getIsDetected().getValue());
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
@@ -160,7 +161,7 @@ public class Superstructure extends SubsystemBase {
 
         isAtSetpoint = new Trigger(elevator.isAtSetpoint);
         isCoralScoringMode.onTrue(effector.setPivotState(PivotState.STOWED));
-        coralDetected.onTrue(setMode(RobotMode.CORAL).asProxy().andThen(() -> new WaitUntilCommand(0.2).andThen(effector.setWheelState(WheelState.IDLE).asProxy()))).onFalse(setMode(RobotMode.IDLE).asProxy());
+        coralDetected.onTrue(setMode(RobotMode.CORAL).andThen(new WaitCommand(0.2).andThen(effector.setWheelState(WheelState.IDLE))).asProxy()).onFalse(setMode(RobotMode.IDLE).asProxy());
     }
 
     public void handleStateTransition() {
@@ -181,6 +182,7 @@ public class Superstructure extends SubsystemBase {
                 robotState = RobotState.CORAL_L4_SCORE;
             } else if (wantedState == WantedState.AUTO_CORAL_PICKUP) {
                 robotState = RobotState.IDLE;
+                effector.setRollerState(WheelState.CORAL_INTAKE);
             } else if (wantedState == WantedState.IDLE) {
                 robotState = RobotState.IDLE;
             }

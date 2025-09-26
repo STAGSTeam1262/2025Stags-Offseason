@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import frc.robot.subsystems.Superstructure.RobotMode;
 import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Effector extends SubsystemBase {
@@ -45,13 +46,15 @@ public class Effector extends SubsystemBase {
     public WheelState wheelState = WheelState.IDLE;
     StringPublisher wheelStatePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Effector/WheelState").publish();
 
+    DoublePublisher pivotPositionPublisher = NetworkTableInstance.getDefault().getDoubleTopic("Subsystems/Effector/Pivot Position").publish();
+
     DoublePublisher wheelVoltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("Subsystems/Effector/Wheel Voltage").publish();
     public double pivotSetpoint = 0;
     DoublePublisher pivotSetpointPublisher = NetworkTableInstance.getDefault().getDoubleTopic("Subsystems/Effector/Pivot Setpoint").publish();
 
     MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
 
-    Trigger setup = new Trigger(() -> DriverStation.isEnabled()).onTrue(setPivotState(PivotState.STOWED));
+    // Trigger setup = new Trigger(() -> DriverStation.isEnabled()).onTrue(setPivotState(PivotState.STOWED));
     
     /*** The end effector of the robot. */
     public Effector() {
@@ -97,6 +100,14 @@ public class Effector extends SubsystemBase {
         return Commands.runOnce(() -> setRollerState(state));
     }
 
+    public void setPivotVoltage(double voltage) {
+        pivotMotor.setVoltage(voltage);
+    }
+
+    public Command setPivotVolts(double voltage) {
+        return Commands.runOnce(() -> setPivotVoltage(voltage));
+    }
+
     public PivotState getPivotState() {
         return pivotState;
     }
@@ -106,13 +117,17 @@ public class Effector extends SubsystemBase {
     }
 
     public void handlePivotState() {
-        if (pivotState == PivotState.PROCESSOR_SCORE) {
-
+        if (pivotState == PivotState.ALGAE) {
+            movePivotToSetpoint(9.5);
         } else if (pivotState == PivotState.STOWED) {
-
-        } else {
-
+            movePivotToSetpoint(0);
+        } else if (pivotState == PivotState.PROCESSOR_SCORE) {
+            movePivotToSetpoint(12.5);
         }
+    }
+
+    public Command autoEjectCoral() {
+        return Commands.runOnce(() -> setWheelVoltage(-6));
     }
 
     public void handleWheelState() {
@@ -120,16 +135,32 @@ public class Effector extends SubsystemBase {
             if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
                 setState(PivotState.ALGAE);
             }
+            setConveyorVoltage(0);
+            setWheelVoltage(-6);
         } else if (wheelState == WheelState.CORAL_INTAKE) {
-
+            setWheelVoltage(-5);
+            setConveyorVoltage(7);
         } else if (wheelState == WheelState.EJECT) {
-            if (superstructure.robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
-                setState(PivotState.PROCESSOR_SCORE);
+            if (superstructure.robotMode == RobotMode.CORAL) {
+                setWheelVoltage(-6);
+                setConveyorVoltage(0);
+            } else if (superstructure.robotMode == RobotMode.IDLE) {
+                if (superstructure.robotState == RobotState.ALGAE_PROCESSOR_SCORE) {
+                    setWheelVoltage(6);
+                    setConveyorVoltage(0);
+                    setPivotState(PivotState.PROCESSOR_SCORE);
+                } else if (superstructure.robotState == RobotState.ALGAE_BARGE_SCORE) {
+                    setWheelVoltage(6);
+                    setConveyorVoltage(0);
+                }
             }
+            
         } else if (wheelState == WheelState.IDLE) {
-
+            setWheelVoltage(0);
+            setConveyorVoltage(0);
         } else {
-
+            setWheelVoltage(0);
+            setConveyorVoltage(0);
         }
     }
 
@@ -170,6 +201,7 @@ public class Effector extends SubsystemBase {
 
         // wheelVoltagePublisher.set(wheelMotor.getMotorVoltage().getValueAsDouble());
         pivotSetpointPublisher.set(pivotSetpoint);
+        pivotPositionPublisher.set(pivotMotor.getPosition().getValueAsDouble());
     }
 
 }
