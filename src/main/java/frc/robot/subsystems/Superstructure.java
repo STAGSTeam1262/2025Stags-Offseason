@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.subsystems.Effector.PivotState;
@@ -82,7 +81,7 @@ public class Superstructure extends SubsystemBase {
     /*** Basic collection of tasks "modes" that the robot has.
      * Used in state logic to decide what state the robot needs to be in.
      */
-    public RobotMode robotMode = RobotMode.IDLE;
+    public RobotMode robotMode = RobotMode.CORAL;
 
     /***
      * State used in controls.
@@ -292,6 +291,7 @@ public class Superstructure extends SubsystemBase {
         driveSpeedMultiplier = 1;
         if (robotState == RobotState.ALGAE_BARGE_SCORE) {
             elevator.setState(State.NET);
+            driveSpeedMultiplier = 0.5;
         } else if (robotState == RobotState.ALGAE_HIGH_PICKUP) {
             elevator.setState(State.HIGH_ALGAE_INTAKE);
         } else if (robotState == RobotState.ALGAE_LOW_PICKUP) {
@@ -304,6 +304,7 @@ public class Superstructure extends SubsystemBase {
             elevator.setState(State.L3);
         } else if (robotState == RobotState.CORAL_L4_SCORE) {
             elevator.setState(State.L4);
+            driveSpeedMultiplier = 0.5;
         } else if (robotState == RobotState.IDLE) {
             elevator.setState(State.STOWED);
         }

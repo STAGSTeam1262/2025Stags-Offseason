@@ -11,11 +11,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 import frc.robot.subsystems.Superstructure.RobotMode;
 import frc.robot.subsystems.Superstructure.RobotState;
@@ -118,7 +116,7 @@ public class Effector extends SubsystemBase {
 
     public void handlePivotState() {
         if (pivotState == PivotState.ALGAE) {
-            movePivotToSetpoint(9.5);
+            movePivotToSetpoint(8);
         } else if (pivotState == PivotState.STOWED) {
             movePivotToSetpoint(0);
         } else if (pivotState == PivotState.PROCESSOR_SCORE) {
@@ -135,7 +133,7 @@ public class Effector extends SubsystemBase {
             if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
                 setState(PivotState.ALGAE);
             }
-            setConveyorVoltage(0);
+            setConveyorVoltage(-5);
             setWheelVoltage(-6);
         } else if (wheelState == WheelState.CORAL_INTAKE) {
             setWheelVoltage(-5);

@@ -12,7 +12,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
@@ -77,8 +77,10 @@ public class Vision extends SubsystemBase {
     public void periodic() {
         tag1ConnectedPublisher.set(tag1Connected.getAsBoolean());
         tag2ConnectedPublisher.set(tag2Connected.getAsBoolean());
-        /*
-        if (tag1Connected.getAsBoolean() && drivetrain.getState().Speeds.omegaRadiansPerSecond > Math.toRadians(180)) {
+
+        double omegaRps = Units.radiansToRotations(drivetrain.getState().Speeds.omegaRadiansPerSecond);
+        
+        if (tag1Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
@@ -87,7 +89,7 @@ public class Vision extends SubsystemBase {
             }
         }   
 
-        if (tag2Connected.getAsBoolean() && drivetrain.getState().Speeds.omegaRadiansPerSecond > Math.toRadians(180)) {
+        if (tag2Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
             var tag2Change = tagCamera2.getLatestResult();
             tagCam2VisionEst = tag2PhotonPoseEstimator.update(tag2Change);
             if (tagCam2VisionEst.isPresent()) {
@@ -95,7 +97,6 @@ public class Vision extends SubsystemBase {
                 tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
             }
         }
-        */
     }
 
 }

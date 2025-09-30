@@ -5,7 +5,6 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -27,14 +26,12 @@ public class Elevator extends SubsystemBase {
         IDLE,
         STOWED,
         CORAL_INTAKE,
-        GROUND_ALGAE_INTAKE,
         LOW_ALGAE_INTAKE,
         HIGH_ALGAE_INTAKE,
         L1,
         L2,
         L3,
         L4,
-        PROCESSOR,
         NET;
     }
 
@@ -131,9 +128,13 @@ public class Elevator extends SubsystemBase {
         } else if (state == State.L3) {
             moveToSetpoint(-31);
         } else if (state == State.L4) {
-            moveToSetpoint(-48);
+            moveToSetpoint(-48.75);
         } else if (state == State.NET) {
             moveToSetpoint(-54);
+        } else if (state == State.LOW_ALGAE_INTAKE) {
+            moveToSetpoint(-11.4);
+        } else if (state == State.HIGH_ALGAE_INTAKE) {
+            moveToSetpoint(-21.5);
         }
     }
 
