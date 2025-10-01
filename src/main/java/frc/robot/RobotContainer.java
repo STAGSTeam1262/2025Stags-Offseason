@@ -72,7 +72,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("hasCoral", new WaitUntilCommand(superstructure.isCoralScoringMode));
 
         // Effector Wheel Commands
-        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP).onlyIf(superstructure.isIdleMode));
+        NamedCommands.registerCommand("intakeCoral", effector.setWheelState(WheelState.CORAL_INTAKE).asProxy());
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE).asProxy());
         NamedCommands.registerCommand("eject", effector.autoEjectCoral().asProxy());
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE).asProxy());

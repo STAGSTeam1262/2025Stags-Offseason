@@ -53,6 +53,12 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "idle"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "Left 2"
@@ -110,6 +116,12 @@
           "type": "named",
           "data": {
             "name": "intakeCoral"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "idle"
           }
         },
         {
