@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -112,7 +113,9 @@ public class Elevator extends SubsystemBase {
     public void moveToSetpoint(double setpoint) {
         motorA.setControl(motionMagicRequest.withPosition(setpoint));
         motorB.setControl(motionMagicRequest.withPosition(setpoint));
-        this.setpoint = setpoint;
+        if (!Utils.isSimulation()) {
+            this.setpoint = setpoint;
+        }
         manual = false;
     }
 

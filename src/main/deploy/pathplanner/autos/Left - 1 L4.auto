@@ -45,6 +45,12 @@
           "data": {
             "name": "stopIntake"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "idle"
+          }
         }
       ]
     }

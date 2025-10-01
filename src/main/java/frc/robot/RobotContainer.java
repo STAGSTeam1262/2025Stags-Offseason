@@ -57,28 +57,28 @@ public class RobotContainer {
 
     public RobotContainer() {
         // Coral Commands
-        NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2).onlyIf(superstructure.isCoralScoringMode).asProxy());
-        NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3).onlyIf(superstructure.isCoralScoringMode).asProxy());
-        NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4).asProxy());
+        NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2).onlyIf(superstructure.isCoralScoringMode));
+        NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3).onlyIf(superstructure.isCoralScoringMode));
+        NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
 
         // Algae Commands
-        NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING).asProxy());
-        NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING).asProxy());
-        NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP).asProxy());
-        NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP).asProxy());
+        NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING));
+        NamedCommands.registerCommand("algaeNetScoring", superstructure.setState(WantedState.AUTO_ALGAE_NET_SCORING));
+        NamedCommands.registerCommand("lowAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_LOW_PICKUP));
+        NamedCommands.registerCommand("highAlgaeIntake", superstructure.setState(WantedState.AUTO_ALGAE_HIGH_PICKUP));
 
         // Wait Until Commands
-        NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint).asProxy());
-        NamedCommands.registerCommand("hasCoral", new WaitUntilCommand(superstructure.isCoralScoringMode).asProxy());
+        NamedCommands.registerCommand("isAtSetpoint", new WaitUntilCommand(elevator.isAtSetpoint));
+        NamedCommands.registerCommand("hasCoral", new WaitUntilCommand(superstructure.isCoralScoringMode));
 
         // Effector Wheel Commands
-        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP).onlyIf(superstructure.isIdleMode).asProxy());
+        NamedCommands.registerCommand("intakeCoral", superstructure.setState(WantedState.AUTO_CORAL_PICKUP).onlyIf(superstructure.isIdleMode));
         NamedCommands.registerCommand("intakeAlgae", effector.setWheelState(WheelState.ALGAE_INTAKE).asProxy());
-        NamedCommands.registerCommand("eject", effector.autoEjectCoral());
+        NamedCommands.registerCommand("eject", effector.autoEjectCoral().asProxy());
         NamedCommands.registerCommand("stopIntake", effector.setWheelState(WheelState.IDLE).asProxy());
 
         // Superstructure
-        NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE).asProxy());
+        NamedCommands.registerCommand("idle", superstructure.setState(WantedState.IDLE));
 
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);

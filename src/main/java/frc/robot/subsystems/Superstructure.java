@@ -119,7 +119,7 @@ public class Superstructure extends SubsystemBase {
 
     public Trigger isAtSetpoint;
 
-    public Trigger coralDetected = new Trigger(() -> coralSensor.getIsDetected().getValue());
+    public Trigger coralDetected = new Trigger(() -> coralSensor.isConnected() && coralSensor.getIsDetected().getValue());
     
     
     /*** Tells each subsystem what it's task is currently/how to respond to it's own wanted states. */
