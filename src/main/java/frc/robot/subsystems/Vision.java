@@ -56,7 +56,7 @@ public class Vision extends SubsystemBase {
     public Vision(Drivetrain drivetrain) {
         this.drivetrain = drivetrain;
 
-        tag1TranslationPublisher.set(new Transform3d(0.43, -0.24, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
+        tag1TranslationPublisher.set(new Transform3d(0.43, -0.24, 0.37, new Rotation3d(0, Math.toDegrees(-10), 0)));
         tag2TranslationPublisher.set(new Transform3d(0.43, 0.24, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
 
         tag1Connected
@@ -82,17 +82,16 @@ public class Vision extends SubsystemBase {
 
         double omegaRps = Units.radiansToRotations(drivetrain.getState().Speeds.omegaRadiansPerSecond);
         tag1PhotonPoseEstimator.addHeadingData(drivetrain.getState().Timestamp, drivetrain.getState().Pose.getRotation());
-        tag2PhotonPoseEstimator.addHeadingData(drivetrain.getState().Timestamp, drivetrain.getState().Pose.getRotation());
         
         if (tag1Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), Utils.fpgaToCurrentTime(tagCam1VisionEst.get().timestampSeconds));
+                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
                 tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
             }
         }   
-
+        /*
         if (tag2Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
             var tag2Change = tagCamera2.getLatestResult();
             tagCam2VisionEst = tag2PhotonPoseEstimator.update(tag2Change);
@@ -101,6 +100,7 @@ public class Vision extends SubsystemBase {
                 tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
             }
         }
+            */
     }
 
 }
