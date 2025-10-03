@@ -60,6 +60,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("L2", superstructure.setState(WantedState.AUTO_CORAL_L2).onlyIf(superstructure.isCoralScoringMode));
         NamedCommands.registerCommand("L3", superstructure.setState(WantedState.AUTO_CORAL_L3).onlyIf(superstructure.isCoralScoringMode));
         NamedCommands.registerCommand("L4", superstructure.setState(WantedState.AUTO_CORAL_L4));
+        NamedCommands.registerCommand("finishL4", Commands.runOnce(() -> elevator.moveToSetpoint(-50.75)));
 
         // Algae Commands
         NamedCommands.registerCommand("algaeProcessorScoring", superstructure.setState(WantedState.AUTO_ALGAE_PROCESSOR_SCORING));
@@ -88,7 +89,6 @@ public class RobotContainer {
 
         // Warmup PathPlanner to avoid Java pauses
         FollowPathCommand.warmupCommand().schedule();
-        
     }
 
     private void configureBindings() {

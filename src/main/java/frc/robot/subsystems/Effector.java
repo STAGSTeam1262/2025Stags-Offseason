@@ -196,7 +196,7 @@ public class Effector extends SubsystemBase {
         pivotStatePublisher.set(pivotState.toString());
         wheelStatePublisher.set(wheelState.toString());
 
-        // wheelVoltagePublisher.set(wheelMotor.getMotorVoltage().getValueAsDouble());
+        wheelVoltagePublisher.set(wheelMotor.getMotorVoltage().getValueAsDouble());
         pivotSetpointPublisher.set(pivotSetpoint);
         pivotPositionPublisher.set(pivotMotor.getPosition().getValueAsDouble());
     }

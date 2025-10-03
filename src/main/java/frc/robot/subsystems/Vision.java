@@ -87,10 +87,12 @@ public class Vision extends SubsystemBase {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
-                if (DriverStation.isTeleopEnabled()) {
+                if (DriverStation.isEnabled()) {
+                    // Robot is enabled, ignore vision rotation.
                     drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, Double.MAX_VALUE));
                     tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
-                } else if (DriverStation.isDisabled()) {
+                } else {
+                    // Robot is disabled, set gyro based on vision rotation.
                     drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
                     tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
                 }

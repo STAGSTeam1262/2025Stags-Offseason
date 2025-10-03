@@ -7,6 +7,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.Slot1Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -46,6 +47,7 @@ public class Elevator extends SubsystemBase {
 
     VelocityVoltage voltageRequest = new VelocityVoltage(0).withFeedForward(0).withSlot(1);
     MotionMagicVoltage motionMagicRequest = new MotionMagicVoltage(0).withSlot(0);
+    PositionVoltage positionRequest = new PositionVoltage(0).withSlot(0); // Unlikely to be used, but here just in case.
 
     public State state = State.IDLE;
     StringPublisher statePublisher = NetworkTableInstance.getDefault().getStringTopic("Subsystems/Elevator/State").publish();
