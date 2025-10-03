@@ -17,6 +17,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -86,8 +87,13 @@ public class Vision extends SubsystemBase {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, Double.MAX_VALUE));
-                tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
+                if (DriverStation.isTeleopEnabled()) {
+                    drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, Double.MAX_VALUE));
+                    tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
+                } else if (DriverStation.isDisabled()) {
+                    drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
+                    tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
+                }
             }
         }
     }
