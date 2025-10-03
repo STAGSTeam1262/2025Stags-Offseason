@@ -7,10 +7,9 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
-import com.ctre.phoenix6.Utils;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -87,20 +86,10 @@ public class Vision extends SubsystemBase {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
             if (tagCam1VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
+                drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, Double.MAX_VALUE));
                 tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
             }
-        }   
-        /*
-        if (tag2Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
-            var tag2Change = tagCamera2.getLatestResult();
-            tagCam2VisionEst = tag2PhotonPoseEstimator.update(tag2Change);
-            if (tagCam2VisionEst.isPresent()) {
-                drivetrain.addVisionMeasurement(tagCam2VisionEst.get().estimatedPose.toPose2d(), Utils.fpgaToCurrentTime(tagCam2VisionEst.get().timestampSeconds));
-                tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
-            }
         }
-            */
     }
 
 }

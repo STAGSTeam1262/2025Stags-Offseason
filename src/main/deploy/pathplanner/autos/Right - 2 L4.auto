@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left 1"
+            "pathName": "Right 1"
           }
         },
         {
@@ -61,7 +61,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left 2"
+            "pathName": "Right 2"
           }
         },
         {
@@ -73,73 +73,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left 3"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "L4"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "isAtSetpoint"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.4
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "eject"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopIntake"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "intakeCoral"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "idle"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left 4"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "hasCoral"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left 5"
+            "pathName": "Right 3"
           }
         },
         {
