@@ -41,8 +41,8 @@ public class Vision extends SubsystemBase {
     public Trigger tag1Connected = new Trigger(() -> tagCamera1.isConnected());
     public Trigger tag2Connected = new Trigger(() -> tagCamera2.isConnected());
 
-    PhotonPoseEstimator tag1PhotonPoseEstimator = new PhotonPoseEstimator(layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, new Transform3d(0.43, -0.24, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
-    PhotonPoseEstimator tag2PhotonPoseEstimator = new PhotonPoseEstimator(layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, new Transform3d(0.43, 0.24, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
+    PhotonPoseEstimator tag1PhotonPoseEstimator = new PhotonPoseEstimator(layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, new Transform3d(0.17, -0.25, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
+    PhotonPoseEstimator tag2PhotonPoseEstimator = new PhotonPoseEstimator(layout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, new Transform3d(0.17, 0.3, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
 
     StructPublisher<Pose2d> tag1PosePublisher = NetworkTableInstance.getDefault().getStructTopic("Subsystems/Vision/Tag 1 Pose", Pose2d.struct).publish();
     StructPublisher<Pose2d> tag2PosePublisher = NetworkTableInstance.getDefault().getStructTopic("Subsystems/Vision/Tag 2 Pose", Pose2d.struct).publish();
@@ -57,7 +57,7 @@ public class Vision extends SubsystemBase {
         this.drivetrain = drivetrain;
 
         tag1TranslationPublisher.set(new Transform3d(0.43, -0.24, 0.37, new Rotation3d(0, Math.toDegrees(-10), 0)));
-        tag2TranslationPublisher.set(new Transform3d(0.43, 0.24, 0.43, new Rotation3d(0, Math.toDegrees(-10), 0)));
+        tag2TranslationPublisher.set(new Transform3d(0.43, 0.24, 0.37, new Rotation3d(0, Math.toDegrees(-10), 0)));
 
         tag1Connected
             .onTrue(Commands.runOnce(() -> 
@@ -86,15 +86,30 @@ public class Vision extends SubsystemBase {
         if (tag1Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
             var tag1Change = tagCamera1.getLatestResult();
             tagCam1VisionEst = tag1PhotonPoseEstimator.update(tag1Change);
-            if (tagCam1VisionEst.isPresent()) {
+            if (tagCam1VisionEst.isPresent() && tag1Change.hasTargets() && tag1Change.getBestTarget().getPoseAmbiguity() < 0.2) {
                 if (DriverStation.isEnabled()) {
                     // Robot is enabled, ignore vision rotation.
-                    drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, Double.MAX_VALUE));
+                    drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, 9999999));
                     tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
                 } else {
                     // Robot is disabled, set gyro based on vision rotation.
                     drivetrain.addVisionMeasurement(tagCam1VisionEst.get().estimatedPose.toPose2d(), tagCam1VisionEst.get().timestampSeconds);
                     tag1PosePublisher.set(tagCam1VisionEst.get().estimatedPose.toPose2d());
+                }
+            }
+        }
+        if (tag2Connected.getAsBoolean() && Math.abs(omegaRps) < 2.0) {
+            var tag2Change = tagCamera2.getLatestResult();
+            tagCam2VisionEst = tag2PhotonPoseEstimator.update(tag2Change);
+            if (tagCam2VisionEst.isPresent() && tag2Change.hasTargets() && tag2Change.getBestTarget().getPoseAmbiguity() < 0.2) {
+                if (DriverStation.isEnabled()) {
+                    // Robot is enabled, ignore vision rotation.
+                    drivetrain.addVisionMeasurement(tagCam2VisionEst.get().estimatedPose.toPose2d(), tagCam2VisionEst.get().timestampSeconds, VecBuilder.fill(0.0, 0.0, 9999999));
+                    tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
+                } else {
+                    // Robot is disabled, set gyro based on vision rotation.
+                    drivetrain.addVisionMeasurement(tagCam2VisionEst.get().estimatedPose.toPose2d(), tagCam2VisionEst.get().timestampSeconds);
+                    tag2PosePublisher.set(tagCam2VisionEst.get().estimatedPose.toPose2d());
                 }
             }
         }

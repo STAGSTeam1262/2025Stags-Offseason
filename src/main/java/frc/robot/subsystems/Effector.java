@@ -148,6 +148,9 @@ public class Effector extends SubsystemBase {
                     setConveyorVoltage(0);
                     setState(PivotState.PROCESSOR_SCORE);
                 } else if (superstructure.robotState == RobotState.ALGAE_BARGE_SCORE) {
+                    setWheelVoltage(8);
+                    setConveyorVoltage(0);
+                } else if (superstructure.robotState == RobotState.ALGAE_HIGH_PICKUP || superstructure.robotState == RobotState.ALGAE_LOW_PICKUP) {
                     setWheelVoltage(6);
                     setConveyorVoltage(0);
                 }
